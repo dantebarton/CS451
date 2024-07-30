@@ -1,0 +1,57 @@
+# Copyright 2024- Swami Iyer
+#
+# Accepts n (int) from standard input and writes n! (computed iteratively and recursively) to standard output.
+
+0     setn      r15 127       # r15 = 127 (stack pointer)
+
+1     read      r1            # r1 = n
+2     calln     r14 7         # r13 = factorialIter(r1)
+3     write     r13           # write r13
+4     calln     r14 14        # r13 = factorialRec(r1)
+5     write     r13           # write r13
+6     halt                    # halt the machine
+
+# int factorialIter(int n):
+#   input : r1 = n
+#   output: r13 = n!
+
+7     setn      r13 1         # r13 = 1
+8     copy      r2 r1         # r2 = r1
+9     jeqzn     r2 13         # jump to 13 if r2 = 0
+10    mul       r13 r13 r2    # r13 = r13 * r2
+11    addn      r2 -1         # r2 = r2 - 1
+12    jumpn     9             # jump to 9
+13    jumpr     r14           # jump to caller
+
+# int factorialRec(int n):
+#   input : r1 = n
+#   output: r13 = n!
+
+# Save register values to memory.
+14    storer    r14 r15       # memory[r15] = r14 (save return address)
+15    addn      r15 1         # r15 = r15 + 1
+16    storer    r1 r15        # memory[r15] = r1  (save r1)
+17    addn      r15 1         # r15 = r15 + 1
+18    storer    r2 r15        # memory[r15] = r2  (save r2)
+19    addn      r15 1         # r15 = r15 + 1
+
+20    jnezn     r1 23         # jump to 23 if r1 != 0
+
+# Base case.
+21    setn      r13 1         # r13 = 1
+22    jumpn     27            # jump to 27
+
+# Recursive step.
+23    copy      r2 r1         # r2 = r1
+24    addn      r1 -1         # r1 = r1 - 1
+25    calln     r14 14        # r13 = factorialRec(r1)
+26    mul       r13 r2 r13    # r13 = r2 * r13
+
+# Restore register values from memory.
+27    addn      r15 -1        # r15 = r15 - 1
+28    loadr     r2 r15        # r2 = memory[r15] (restore r2)
+29    addn      r15 -1        # r15 = r15 - 1
+30    loadr     r1 r15        # r1 = memory[r15] (restore r1)
+31    addn      r15 -1        # r15 = r15 - 1
+32    loadr     r14 r15       # r14 = memory[r15] (restore return address)
+33    jumpr     r14           # jump to caller
