@@ -22,7 +22,7 @@ $ ./bin/iota tests/Factorial.iota
 
 The following command assembles and simulates the `HelloWorld.hmmm` program:
 ```bash
-$ ./bin/hmmm Factorial.hmmm
+$ python3 ./bin/hmmm.py Factorial.hmmm
 ```
 
 ## Software Dependencies
