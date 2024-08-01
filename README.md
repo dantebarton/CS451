@@ -1,8 +1,8 @@
 ## *iota*  Compiler
 
 *iota* is a compiler for a language called *iota*. Refer to [The *iota* Language Specification](langspec) 
-for the formal details about the language. The compiler targets a register-based machine called 
-[Harvey Mudd Miniature Machine (HMMM)](https://www.cs.hmc.edu/~cs5grad/cs5/hmmm/documentation/documentation.html).
+for the formal details about the language. The compiler targets a register-based architecture called 
+[Marvin](https://www.cs.umb.edu/~siyer/teaching/marvinspec.pdf).
 
 The following command compiles the compiler:
 ```bash
@@ -15,14 +15,14 @@ $ ./bin/iota
 ```
 
 The following command compiles a test *iota* program `Factorial.iota` using the *iota* compiler, which translates 
-the program into an HMMM program called `Factorial.hmmm`:
+the program into a Marvin program called `Factorial.marv`:
 ```bash
 $ ./bin/iota tests/Factorial.iota
 ```
 
-The following command assembles and simulates the `HelloWorld.hmmm` program:
+The following command assembles and simulates the `Factorial.marv` program:
 ```bash
-$ python3 ./bin/hmmm.py Factorial.hmmm
+$ python3 ./bin/marvin.py Factorial.marv
 ```
 
 ## Software Dependencies
