@@ -22,7 +22,7 @@ import java.io.FileNotFoundException;
  *   Analysis does all of this by recursively descending the AST down to its leaves.</li>
  *
  *   <li>Finally, it sends a codegen() message to the AST for generating the target language code. Again, codegen()
- *   recursively descends the tree, down to its leaves, generating a .hmmm file.</li>
+ *   recursively descends the tree, down to its leaves, generating a .marv file.</li>
  * </ol>
  */
 class Main {
@@ -101,9 +101,9 @@ class Main {
         }
 
         // Generate HMMM code.
-        NEmitter hmmmCode = new NEmitter(sourceFile, jvmCode.clFile(), registerAllocation, verbose);
-        hmmmCode.write();
-        if (hmmmCode.errorHasOccurred()) {
+        NEmitter marvCode = new NEmitter(sourceFile, jvmCode.clFile(), registerAllocation, verbose);
+        marvCode.write();
+        if (marvCode.errorHasOccurred()) {
             System.err.println("Error: compilation failed!");
         }
     }
@@ -115,7 +115,7 @@ class Main {
                 + "Where possible options include:\n"
                 + "  -g  Allocate registers using graph coloring method; default = naive method\n"
                 + "  -v  Display intermediate representations and liveness intervals\n"
-                + "  -d  <dir> Specify where to place output (.hmmm) file; default = .";
+                + "  -d  <dir> Specify where to place output (.marv) file; default = .";
         System.out.println(usage);
     }
 }
