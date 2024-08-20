@@ -52,7 +52,7 @@ class NVirtualRegister extends NRegister {
 }
 
 /**
- * Representation of a physical register in HMMM.
+ * Representation of a physical register in Marvin.
  */
 class NPhysicalRegister extends NRegister {
     /**
@@ -61,64 +61,64 @@ class NPhysicalRegister extends NRegister {
     public static final int ZERO = 0;
 
     /**
-     * Temporary register, t1.
+     * Temporary register, R1.
      */
-    public static final int T1 = 1;
+    public static final int R1 = 1;
 
     /**
-     * Temporary register, t2.
+     * Temporary register, R2.
      */
-    public static final int T2 = 2;
+    public static final int R2 = 2;
 
     /**
-     * Temporary register, t3.
+     * Temporary register, R3.
      */
-    public static final int T3 = 3;
+    public static final int R3 = 3;
 
     /**
-     * Temporary register, t4.
+     * Temporary register, R4.
      */
-    public static final int T4 = 4;
+    public static final int R4 = 4;
 
     /**
-     * Temporary register, t5.
+     * Temporary register, R5.
      */
-    public static final int T5 = 5;
+    public static final int R5 = 5;
 
     /**
-     * Temporary register, t6.
+     * Temporary register, R6.
      */
-    public static final int T6 = 6;
+    public static final int R6 = 6;
 
     /**
-     * Temporary register, t7.
+     * Temporary register, R7.
      */
-    public static final int T7 = 7;
+    public static final int R7 = 7;
 
     /**
-     * Temporary register, t8.
+     * Temporary register, R8.
      */
-    public static final int T8 = 8;
+    public static final int R8 = 8;
 
     /**
-     * Temporary register, t9.
+     * Temporary register, R9.
      */
-    public static final int T9 = 9;
+    public static final int R9 = 9;
 
     /**
-     * Temporary register, t10.
+     * Temporary register, R10.
      */
-    public static final int T10 = 10;
+    public static final int R10 = 10;
 
     /**
-     * Temporary register, t11.
+     * Temporary register, R11.
      */
-    public static final int T11 = 11;
+    public static final int R11 = 11;
 
     /**
-     * Temporary register, t12.
+     * Temporary register, R12.
      */
-    public static final int T12 = 12;
+    public static final int R12 = 12;
 
     /**
      * Return value register, rv.

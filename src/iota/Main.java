@@ -100,8 +100,9 @@ class Main {
             return;
         }
 
-        // Generate HMMM code.
+        // Generate Marvin code.
         NEmitter marvCode = new NEmitter(sourceFile, jvmCode.clFile(), registerAllocation, verbose);
+        marvCode.destinationDir(outputDir);
         marvCode.write();
         if (marvCode.errorHasOccurred()) {
             System.err.println("Error: compilation failed!");

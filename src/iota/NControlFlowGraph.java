@@ -3,6 +3,7 @@
 package iota;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -34,6 +35,8 @@ import static iota.CLConstants.ISUB;
 import static iota.CLConstants.LDC;
 import static iota.CLConstants.POP;
 import static iota.CLConstants.RETURN;
+
+import static iota.NPhysicalRegister.*;
 
 /**
  * Representation of a basic block within a control-flow graph (cfg).
@@ -98,6 +101,26 @@ class NBasicBlock {
      * List of low-level (LIR) instructions in this block.
      */
     public ArrayList<NLIRInstruction> lir;
+
+    /**
+     * The local liveUse set (registers that are used before they are defined in this block).
+     */
+    public BitSet liveUse;
+
+    /**
+     * The local liveDef set (registers that are written to in this block).
+     */
+    public BitSet liveDef;
+
+    /**
+     * The global liveIn set (this.liveOut - this.liveDef + this.liveUse).
+     */
+    public BitSet liveIn;
+
+    /**
+     * The global liveOut set (union of s.liveIn for each successor s of this block).
+     */
+    public BitSet liveOut;
 
     /**
      * Constructs a basic block.
@@ -197,6 +220,38 @@ class NBasicBlock {
             p.printf("%s\n", instruction);
         }
         p.println();
+    }
+
+    public void writeLivenessSetsToStdOut(PrettyPrinter p) {
+        p.printf("%s:\n", id());
+        String s = "";
+        for (int i = liveUse.nextSetBit(0); i >= 0; i = liveUse.nextSetBit(i + 1)) {
+            s += i < 16 ? regInfo[i] + ", " : "v" + i + ", ";
+        }
+        s = s.isEmpty() ? "" : s.substring(0, s.length() - 2);
+        p.printf("liveUse: {%s}\n", s);
+        s = "";
+        for (int i = liveDef.nextSetBit(0); i >= 0; i = liveDef.nextSetBit(i + 1)) {
+            s += i < 16 ? regInfo[i] + ", " : "v" + i + ", ";
+        }
+        s = s.isEmpty() ? "" : s.substring(0, s.length() - 2);
+        p.printf("liveDef: {%s}\n", s);
+        s = "";
+        for (int i = liveIn.nextSetBit(0); i >= 0; i = liveIn.nextSetBit(i + 1)) {
+            s += i < 16 ? regInfo[i] + ", " : "v" + i + ", ";
+        }
+        s = s.isEmpty() ? "" : s.substring(0, s.length() - 2);
+        p.printf("liveIn: {%s}\n", s);
+        s = "";
+        for (int i = liveOut.nextSetBit(0); i >= 0; i = liveOut.nextSetBit(i + 1)) {
+            s += i < 16 ? regInfo[i] + ", " : "v" + i + ", ";
+        }
+        s = s.isEmpty() ? "" : s.substring(0, s.length() - 2);
+        p.printf("liveOut: {%s}\n\n", s);
+    }
+
+    public void writeLivenessIntervalsToStdOut(PrettyPrinter p) {
+
     }
 }
 
@@ -466,7 +521,7 @@ class NControlFlowGraph {
                         operandStack.push(ins.id);
                         break;
                     case LDC:
-                        ins = new NHIRIntConstant(block, hirId++, ((NLDCTuple) tuple).intConstant);
+                        ins = new NHIRIntConstant(block, hirId++, ((NLDCTuple) tuple).value);
                         hirMap.put(ins.id, ins);
                         block.hir.add(ins);
                         operandStack.push(ins.id);
@@ -595,7 +650,7 @@ class NControlFlowGraph {
                     }
                     NHIRInstruction arg = hirMap.get(phi.args.get(i).id);
                     NBasicBlock targetBlock = block.predecessors.get(i);
-                    NLIRCopy copy = new NLIRCopy(arg.block, lirId++, arg.lir, phi.lir);
+                    NLIRCopy copy = new NLIRCopy(arg.block, lirId++, phi.lir, arg.lir);
                     int len = targetBlock.hir.size();
                     NHIRInstruction targetIns = hirMap.get(targetBlock.hir.get(len - 1).id);
                     if (targetIns instanceof NHIRJump) {
@@ -662,6 +717,24 @@ class NControlFlowGraph {
         p.printf("[[ LIR ]]\n\n");
         for (NBasicBlock block : basicBlocks) {
             block.writeLirToStdOut(p);
+        }
+        p.indentLeft();
+    }
+
+    public void writeLivenessSetsToStdOut(PrettyPrinter p) {
+        p.indentRight();
+        p.printf("[[ Liveness Sets ]]\n\n");
+        for (NBasicBlock block : basicBlocks) {
+            block.writeLivenessSetsToStdOut(p);
+        }
+        p.indentLeft();
+    }
+
+    public void writeLivenessIntervalsToStdOut(PrettyPrinter p) {
+        p.indentRight();
+        p.printf("[[ Liveness Intervals ]]\n\n");
+        for (NBasicBlock block : basicBlocks) {
+            block.writeLivenessIntervalsToStdOut(p);
         }
         p.indentLeft();
     }
@@ -825,5 +898,51 @@ class NControlFlowGraph {
         int i = 0;
         String argTypes = descriptor.substring(1, descriptor.lastIndexOf(")"));
         return argTypes.length();
+    }
+
+    public void computeLocalLivenessSets() {
+        for (NBasicBlock b : basicBlocks) {
+            b.liveUse = new BitSet(registers.size());
+            b.liveDef = new BitSet(registers.size());
+            for (NLIRInstruction lir : b.lir) {
+                for (NRegister reg : lir.reads) {
+                    if (!b.liveDef.get(reg.number)) {
+                        b.liveUse.set(reg.number);
+                    }
+                }
+                if (lir.write != null) {
+                    b.liveDef.set(lir.write.number);
+                }
+            }
+        }
+    }
+
+    public void computeGlobalLivenessSets() {
+        for (NBasicBlock b : basicBlocks) {
+            b.liveIn = new BitSet(registers.size());
+            b.liveOut = new BitSet(registers.size());
+        }
+        boolean changed = false;
+        do {
+            changed = false;
+            for (int i = basicBlocks.size() - 1; i >= 0; i--) {
+                NBasicBlock b = basicBlocks.get(i);
+                BitSet newLiveOut = new BitSet(registers.size());
+                for (NBasicBlock s : b.successors) {
+                    newLiveOut.or(s.liveIn);
+                }
+                if (!b.liveOut.equals(newLiveOut)) {
+                    b.liveOut = newLiveOut;
+                    changed = true;
+                }
+                b.liveIn = (BitSet) b.liveOut.clone();
+                b.liveIn.andNot(b.liveDef);
+                b.liveIn.or(b.liveUse);
+            }
+        } while (changed);
+    }
+
+    public void computeLivenessIntervals() {
+
     }
 }

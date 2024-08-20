@@ -27,7 +27,7 @@ abstract class NTuple {
     public boolean isLeader;
 
     /**
-     * Constructs a tuple representing a JVM instruction.
+     * Constructs an NTuple representing a JVM instruction.
      *
      * @param pc     program counter of the instruction.
      * @param opcode opcode of the instruction.
@@ -57,7 +57,7 @@ class NBranchTuple extends NTuple {
     public short location;
 
     /**
-     * Constructs an BranchTuple representing a branch instruction.
+     * Constructs a BranchTuple representing a branch instruction.
      *
      * @param pc       program counter of the instruction.
      * @param opcode   opcode of the instruction.
@@ -83,25 +83,25 @@ class NLDCTuple extends NTuple {
     /**
      * The integer constant corresponding to the LDC instruction.
      */
-    public int intConstant;
+    public int value;
 
     /**
      * Constructs an LDCTuple representing LDC instruction.
      *
-     * @param pc          program counter of the instruction.
-     * @param opcode      opcode of the instruction.
-     * @param intConstant integer constant corresponding to the instruction.
+     * @param pc     program counter of the instruction.
+     * @param opcode opcode of the instruction.
+     * @param value  integer constant corresponding to the instruction.
      */
-    public NLDCTuple(int pc, int opcode, int intConstant) {
+    public NLDCTuple(int pc, int opcode, int value) {
         super(pc, opcode);
-        this.intConstant = intConstant;
+        this.value = value;
     }
 
     /**
      * {@inheritDoc}
      */
     public void writeToStdOut(PrettyPrinter p) {
-        p.printf("%s: %s %s\n", pc, mnemonic, intConstant);
+        p.printf("%s: %s %s\n", pc, mnemonic, value);
     }
 }
 
@@ -115,7 +115,7 @@ class NLoadStoreTuple extends NTuple {
     public byte offset;
 
     /**
-     * Constructs an LoadStoreTuple representing a load-store instruction.
+     * Constructs a LoadStoreTuple representing a load-store instruction.
      *
      * @param pc     program counter of the instruction.
      * @param opcode opcode of the instruction.
@@ -149,7 +149,7 @@ class NMethodCallTuple extends NTuple {
     public String descriptor;
 
     /**
-     * Constructs an MethodCallTuple representing a method call instruction.
+     * Constructs a MethodCallTuple representing a method call instruction.
      *
      * @param pc         program counter of the instruction.
      * @param opcode     opcode of the instruction.
