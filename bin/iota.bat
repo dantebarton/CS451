@@ -1,7 +1,5 @@
 @echo off
 
-REM Copyright 2024- Swami Iyer
-REM
 REM Wrapper script for running iota.Main program.
 
 set BASE_DIR=%~dp0

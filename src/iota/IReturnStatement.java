@@ -1,5 +1,3 @@
-// Copyright 2024- Swami Iyer
-
 package iota;
 
 import static iota.CLConstants.IRETURN;

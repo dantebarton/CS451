@@ -1,33 +1,33 @@
-// Copyright 2024- Swami Iyer
-
 package iota;
 
+import static iota.CLConstants.*;
+
 /**
- * An abstract representation of a JVM instruction as a tuple.
+ * Abstract representation of a JVM instruction as a tuple.
  */
 abstract class NTuple {
     /**
-     * Program counter of the JVM instruction.
+     * Program counter of the instruction.
      */
     public int pc;
 
     /**
-     * Opcode of the JVM instruction.
+     * Opcode of the instruction.
      */
     public int opcode;
 
     /**
-     * Mnemonic of the JVM instruction.
+     * Mnemonic of the instruction.
      */
     public String mnemonic;
 
     /**
-     * Is this tuple the leader of the basic block containing it.
+     * Whether the tuple is the leader of the basic block containing it.
      */
     public boolean isLeader;
 
     /**
-     * Constructs an NTuple representing a JVM instruction.
+     * Constructs an NTuple object.
      *
      * @param pc     program counter of the instruction.
      * @param opcode opcode of the instruction.
@@ -48,7 +48,7 @@ abstract class NTuple {
 }
 
 /**
- * Tuple representation of a branch instruction.
+ * Representation of a branch instruction.
  */
 class NBranchTuple extends NTuple {
     /**
@@ -57,7 +57,7 @@ class NBranchTuple extends NTuple {
     public short location;
 
     /**
-     * Constructs a BranchTuple representing a branch instruction.
+     * Constructs an NBranchTuple object.
      *
      * @param pc       program counter of the instruction.
      * @param opcode   opcode of the instruction.
@@ -77,67 +77,37 @@ class NBranchTuple extends NTuple {
 }
 
 /**
- * Tuple representation of LDC instruction.
+ * Representation of an instruction for loading an integer constant.
  */
-class NLDCTuple extends NTuple {
+class NIConstTuple extends NTuple {
     /**
-     * The integer constant corresponding to the LDC instruction.
+     * The integer constant.
      */
-    public int value;
+    public int N;
 
     /**
-     * Constructs an LDCTuple representing LDC instruction.
+     * Constructs an NIConstTuple object.
      *
-     * @param pc     program counter of the instruction.
-     * @param opcode opcode of the instruction.
-     * @param value  integer constant corresponding to the instruction.
+     * @param pc program counter of the instruction.
+     * @param N  the integer constant.
      */
-    public NLDCTuple(int pc, int opcode, int value) {
-        super(pc, opcode);
-        this.value = value;
+    public NIConstTuple(int pc, int N) {
+        super(pc, LDC);
+        this.N = N;
     }
 
     /**
      * {@inheritDoc}
      */
     public void writeToStdOut(PrettyPrinter p) {
-        p.printf("%s: %s %s\n", pc, mnemonic, value);
+        p.printf("%s: %s %s\n", pc, mnemonic, N);
     }
 }
 
 /**
- * Tuple representation of load-store instructions.
+ * Representation of an instruction for calling static methods.
  */
-class NLoadStoreTuple extends NTuple {
-    /**
-     * Variable offset.
-     */
-    public byte offset;
-
-    /**
-     * Constructs a LoadStoreTuple representing a load-store instruction.
-     *
-     * @param pc     program counter of the instruction.
-     * @param opcode opcode of the instruction.
-     * @param offset variable offset.
-     */
-    public NLoadStoreTuple(int pc, int opcode, byte offset) {
-        super(pc, opcode);
-        this.offset = offset;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void writeToStdOut(PrettyPrinter p) {
-        p.printf("%s: %s %s\n", pc, mnemonic, offset);
-    }
-}
-
-/**
- * Tuple representation of method call (INVOKESTATIC) instruction.
- */
-class NMethodCallTuple extends NTuple {
+class NInvokestaticTuple extends NTuple {
     /**
      * Name of the method.
      */
@@ -149,15 +119,14 @@ class NMethodCallTuple extends NTuple {
     public String descriptor;
 
     /**
-     * Constructs a MethodCallTuple representing a method call instruction.
+     * Constructs an NInvokestaticTuple object.
      *
      * @param pc         program counter of the instruction.
-     * @param opcode     opcode of the instruction.
      * @param name       name of the method.
      * @param descriptor descriptor of the method.
      */
-    public NMethodCallTuple(int pc, int opcode, String name, String descriptor) {
-        super(pc, opcode);
+    public NInvokestaticTuple(int pc, String name, String descriptor) {
+        super(pc, INVOKESTATIC);
         this.name = name;
         this.descriptor = descriptor;
     }
@@ -171,11 +140,40 @@ class NMethodCallTuple extends NTuple {
 }
 
 /**
- * Tuple representation of a no-argument instruction.
+ * Representation of a load-store instruction.
+ */
+class NLoadStoreTuple extends NTuple {
+    /**
+     * Index of the variable to load from or store to.
+     */
+    public byte index;
+
+    /**
+     * Constructs an NLoadStoreTuple object.
+     *
+     * @param pc     program counter of the instruction.
+     * @param opcode opcode of the instruction.
+     * @param index  variable index.
+     */
+    public NLoadStoreTuple(int pc, int opcode, byte index) {
+        super(pc, opcode);
+        this.index = index;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void writeToStdOut(PrettyPrinter p) {
+        p.printf("%s: %s %s\n", pc, mnemonic, index);
+    }
+}
+
+/**
+ * Representation of a no-argument instruction.
  */
 class NNoArgTuple extends NTuple {
     /**
-     * Constructs a NoArgTuple representing a no-argument instruction.
+     * Constructs an NNoArgTuple object.
      *
      * @param pc     program counter of the instruction.
      * @param opcode opcode of the instruction.

@@ -1,5 +1,3 @@
-// Copyright 2024- Swami Iyer
-
 package iota;
 
 /**
@@ -35,6 +33,17 @@ abstract class NRegister {
     public String toString() {
         return name;
     }
+
+    /**
+     * Returns the physical register associated with the given register.
+     *
+     * @param register the register.
+     * @return the physical register associated with the given register.
+     */
+    public static NPhysicalRegister toPhysicalRegister(NRegister register) {
+        return register instanceof NPhysicalRegister ? (NPhysicalRegister) register :
+                ((NVirtualRegister) register).pReg;
+    }
 }
 
 /**
@@ -42,12 +51,29 @@ abstract class NRegister {
  */
 class NVirtualRegister extends NRegister {
     /**
+     * The physical register assigned to this virtual register.
+     */
+    public NPhysicalRegister pReg;
+
+    /**
+     * Whether the physical register must be spilled.
+     */
+    public boolean spill;
+
+    /**
+     * The offset (from stack pointer, SP) where the register will be spilled.
+     */
+    public int offset;
+
+    /**
      * Constructs an NVirtualRegister object.
      *
      * @param number register number.
      */
     public NVirtualRegister(int number) {
         super(number, "v" + number);
+        spill = false;
+        offset = -1;
     }
 }
 
@@ -56,9 +82,14 @@ class NVirtualRegister extends NRegister {
  */
 class NPhysicalRegister extends NRegister {
     /**
-     * Constant 0 register, zero.
+     * Maximum number of temporary registers available for allocation.
      */
-    public static final int ZERO = 0;
+    public static final int MAX_COUNT = 11;
+
+    /**
+     * Temporary register, R0.
+     */
+    public static final int R0 = 0;
 
     /**
      * Temporary register, R1.
@@ -116,9 +147,9 @@ class NPhysicalRegister extends NRegister {
     public static final int R11 = 11;
 
     /**
-     * Temporary register, R12.
+     * Return address register, ra.
      */
-    public static final int R12 = 12;
+    public static final int RA = 12;
 
     /**
      * Return value register, rv.
@@ -126,9 +157,9 @@ class NPhysicalRegister extends NRegister {
     public static final int RV = 13;
 
     /**
-     * Return address register, ra.
+     * Frame pointer register, fp.
      */
-    public static final int RA = 14;
+    public static final int FP = 14;
 
     /**
      * Stack pointer register, sp.
@@ -138,12 +169,12 @@ class NPhysicalRegister extends NRegister {
     /**
      * Maps register number to the register's representation.
      */
-    public static final NPhysicalRegister[] regInfo = {new NPhysicalRegister(0, "r0"), new NPhysicalRegister(1, "r1"),
-            new NPhysicalRegister(2, "r2"), new NPhysicalRegister(3, "r3"), new NPhysicalRegister(4, "r4"),
-            new NPhysicalRegister(5, "r5"), new NPhysicalRegister(6, "r6"), new NPhysicalRegister(7, "r7"),
-            new NPhysicalRegister(8, "r8"), new NPhysicalRegister(9, "r9"), new NPhysicalRegister(10, "r10"),
-            new NPhysicalRegister(11, "r11"), new NPhysicalRegister(12, "r12"), new NPhysicalRegister(13, "r13"),
-            new NPhysicalRegister(14, "r14"), new NPhysicalRegister(15, "r15")};
+    public static final NPhysicalRegister[] regInfo = {new NPhysicalRegister(R0, "r0"), new NPhysicalRegister(R1, "r1"),
+            new NPhysicalRegister(R2, "r2"), new NPhysicalRegister(R3, "r3"), new NPhysicalRegister(R4, "r4"),
+            new NPhysicalRegister(R5, "r5"), new NPhysicalRegister(R6, "r6"), new NPhysicalRegister(R7, "r7"),
+            new NPhysicalRegister(R8, "r8"), new NPhysicalRegister(R9, "r9"), new NPhysicalRegister(R10, "r10"),
+            new NPhysicalRegister(R11, "r11"), new NPhysicalRegister(RA, "r12"), new NPhysicalRegister(RV, "r13"),
+            new NPhysicalRegister(FP, "r14"), new NPhysicalRegister(SP, "r15")};
 
     /**
      * Constructs an NPhysicalRegister object.

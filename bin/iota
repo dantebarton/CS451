@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# Copyright 2024- Swami Iyer
-#
 # Wrapper script for running iota.Main program.
 
 BASE_DIR=`dirname $0`

@@ -1,46 +1,70 @@
 package iota;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import static iota.NPhysicalRegister.*;
 
 /**
  * An abstract low-level intermediate representation (LIR) of an HIR instruction.
  */
-abstract class NLIRInstruction {
+abstract class NLirInstruction {
     /**
-     * The enclosing basic block.
+     * Maps LIR mnemonic to the corresponding Marvin mnemonic. For example, maps "push" to "pushr".
+     */
+    protected static HashMap<String, String> lir2Marvin;
+
+    // Create and populate lir2Marvin.
+    static {
+        lir2Marvin = new HashMap<>();
+        lir2Marvin.put("call", "calln");
+        lir2Marvin.put("jeq", "jeqn");
+        lir2Marvin.put("jge", "jgen");
+        lir2Marvin.put("jgt", "jgtn");
+        lir2Marvin.put("jle", "jlen");
+        lir2Marvin.put("jlt", "jltn");
+        lir2Marvin.put("jne", "jnen");
+        lir2Marvin.put("jump", "jumpr");
+        lir2Marvin.put("load", "loadr");
+        lir2Marvin.put("pop", "popr");
+        lir2Marvin.put("push", "pushr");
+        lir2Marvin.put("return", "jumpr");
+        lir2Marvin.put("store", "storer");
+    }
+
+    /**
+     * Enclosing basic block.
      */
     public NBasicBlock block;
 
     /**
-     * Unique id of this instruction.
+     * Instruction id.
      */
     public int id;
 
     /**
-     * Mnemonic of this instruction.
+     * Instruction mnemonic.
      */
     public String mnemonic;
 
     /**
-     * Registers that store the inputs (if any) of this instruction.
+     * Input registers (if any).
      */
     public ArrayList<NRegister> reads;
 
     /**
-     * Register that stores the output (if any) of this instruction.
+     * Output register (if any).
      */
     public NRegister write;
 
     /**
-     * Constructs an NLIRInstruction object.
+     * Constructs an NLirInstruction object.
      *
      * @param block    enclosing block.
-     * @param id       id of the instruction.
-     * @param mnemonic mnemonic of the instruction.
+     * @param id       instruction id.
+     * @param mnemonic instruction mnemonic.
      */
-    protected NLIRInstruction(NBasicBlock block, int id, String mnemonic) {
+    protected NLirInstruction(NBasicBlock block, int id, String mnemonic) {
         this.block = block;
         this.id = id;
         this.mnemonic = mnemonic;
@@ -51,7 +75,7 @@ abstract class NLIRInstruction {
     /**
      * Returns the id of this instruction as a string.
      *
-     * @return the id of this instruction as a string.
+     * @return Returns the id of this instruction as a string.
      */
     public String id() {
         return id + "";
@@ -75,82 +99,37 @@ abstract class NLIRInstruction {
 }
 
 /**
- * LIR instruction representing a phi function.
+ * Representation of an arithmetic instruction.
  */
-class NLIRPhiFunction extends NLIRInstruction {
+class NLirArithmetic extends NLirInstruction {
     /**
-     * Constructs an NLIRPhiFunction object.
+     * Constructs an NLirArithmetic object.
      *
      * @param block    enclosing basic block.
-     * @param id       id of the instruction.
-     * @param mnemonic mnemonic of the instruction.
+     * @param id       instruction id.
+     * @param mnemonic instruction mnemonic.
+     * @param lhs      lhs instruction.
+     * @param rhs      rhs instruction.
      */
-    public NLIRPhiFunction(NBasicBlock block, int id, String mnemonic) {
+    public NLirArithmetic(NBasicBlock block, int id, String mnemonic, NLirInstruction lhs, NLirInstruction rhs) {
         super(block, id, mnemonic);
+        reads.add(lhs.write);
+        reads.add(rhs.write);
         write = new NVirtualRegister(NControlFlowGraph.regId++);
-        block.cfg.registers.add(write);
-    }
-}
-
-/**
- * LIR instruction representing an integer constant.
- */
-class NLIRIntConstant extends NLIRInstruction {
-    /**
-     * The constant int value.
-     */
-    public int value;
-
-    /**
-     * Constructs an NLIRIntConstant object.
-     *
-     * @param block    enclosing basic block.
-     * @param id       id of the instruction.
-     * @param mnemonic mnemonic of the instruction.
-     * @param value    the constant int value.
-     */
-    public NLIRIntConstant(NBasicBlock block, int id, String mnemonic, int value) {
-        super(block, id, mnemonic);
-        this.value = value;
-        write = new NVirtualRegister(NControlFlowGraph.regId++);
-        block.cfg.registers.add(write);
+        if (write instanceof NPhysicalRegister) {
+            block.cfg.registers.set(write.number, write);
+        } else if (!block.cfg.registers.contains(write)) {
+            block.cfg.registers.add(write);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public void toMarvin() {
-        NMarvinInstruction ins = null;
+        NMarvinInstruction ins = new NMarvinArithmetic(mnemonic, toPhysicalRegister(write),
+                toPhysicalRegister(reads.get(0)), toPhysicalRegister(reads.get(1)));
         block.marvin.add(ins);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String toString() {
-        return id() + ": " + mnemonic + " " + write + " " + value;
-    }
-}
-
-/**
- * LIR instruction representing an arithmetic instruction.
- */
-class NLIRArithmetic extends NLIRInstruction {
-    /**
-     * Constructs an NLIRArithmetic object.
-     *
-     * @param block    enclosing basic block.
-     * @param id       id of the instruction.
-     * @param mnemonic mnemonic of the instruction.
-     * @param lhs      lhs instruction.
-     * @param rhs      rhs instruction.
-     */
-    public NLIRArithmetic(NBasicBlock block, int id, String mnemonic, NLIRInstruction lhs, NLIRInstruction rhs) {
-        super(block, id, mnemonic);
-        reads.add(lhs.write);
-        reads.add(rhs.write);
-        write = new NVirtualRegister(NControlFlowGraph.regId++);
-        block.cfg.registers.add(write);
     }
 
     /**
@@ -162,131 +141,43 @@ class NLIRArithmetic extends NLIRInstruction {
 }
 
 /**
- * LIR instruction representing conditional or unconditional jump instruction.
+ * Representation of a method call instruction.
  */
-class NLIRJump extends NLIRInstruction {
-    /**
-     * Block to jump to on true.
-     */
-    public NBasicBlock onTrueBlock;
-
-    /**
-     * Block to jump to on false (null for an unconditional jump).
-     */
-    public NBasicBlock onFalseBlock;
-
-    /**
-     * Constructs an NLIRJump object for an unconditional jump.
-     *
-     * @param block       enclosing block.
-     * @param id          id of the instruction.
-     * @param mnemonic    mnemonic of the jump instruction.
-     * @param onTrueBlock block to jump to.
-     */
-    public NLIRJump(NBasicBlock block, int id, String mnemonic, NBasicBlock onTrueBlock) {
-        super(block, id, mnemonic);
-        this.onTrueBlock = onTrueBlock;
-        onFalseBlock = null;
-    }
-
-    /**
-     * Constructs an NLIRJump object for a conditional jump.
-     *
-     * @param block        enclosing block.
-     * @param id           id of the instruction.
-     * @param mnemonic     mnemonic of the jump instruction.
-     * @param lhs          lhs LIR.
-     * @param rhs          rhs LIR.
-     * @param onTrueBlock  block to jump to on true.
-     * @param onFalseBlock block to jump to on false.
-     */
-    public NLIRJump(NBasicBlock block, int id, String mnemonic, NLIRInstruction lhs, NLIRInstruction rhs,
-                    NBasicBlock onTrueBlock, NBasicBlock onFalseBlock) {
-        super(block, id, mnemonic);
-        reads.add(lhs.write);
-        reads.add(rhs.write);
-        this.onTrueBlock = onTrueBlock;
-        this.onFalseBlock = onFalseBlock;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String toString() {
-        if (onFalseBlock == null) {
-            return id() + ": " + mnemonic + " " + onTrueBlock.id();
-        }
-        return id() + ": " + mnemonic + " " + reads.get(0) + " " + reads.get(1) + " " + onTrueBlock.id() +
-                " " + onFalseBlock.id();
-    }
-}
-
-/**
- * LIR instruction representing a return instruction.
- */
-class NLIRReturn extends NLIRInstruction {
-    /**
-     * Constructs an NLIRReturn object for return instruction without a value.
-     *
-     * @param block    enclosing block.
-     * @param id       id of the instruction.
-     * @param mnemonic mnemonic of the instruction.
-     */
-    public NLIRReturn(NBasicBlock block, int id, String mnemonic) {
-        super(block, id, mnemonic);
-    }
-
-    /**
-     * Constructs an NLIRReturn object for return instruction with a value.
-     *
-     * @param block    enclosing block.
-     * @param id       id of the instruction.
-     * @param mnemonic mnemonic of the instruction.
-     * @param result   physical register storing  the return value.
-     */
-    public NLIRReturn(NBasicBlock block, int id, String mnemonic, NPhysicalRegister result) {
-        super(block, id, mnemonic);
-        reads.add(result);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String toString() {
-        return id() + ": " + (reads.isEmpty() ? mnemonic : mnemonic + " " + reads.get(0));
-    }
-}
-
-/**
- * LIR instruction representing a method call instruction.
- */
-class NLIRMethodCall extends NLIRInstruction {
+class NLirCall extends NLirInstruction {
     /**
      * Name of the method.
      */
     private String name;
 
     /**
-     * Constructs an NLIRMethodCall object.
+     * Constructs an NLirCall object.
      *
      * @param block     enclosing basic block.
-     * @param id        id of the instruction.
-     * @param mnemonic  mnemonic of the instruction.
+     * @param id        instruction id.
+     * @param mnemonic  instruction mnemonic.
      * @param name      name of the method.
      * @param arguments arguments to the method.
      * @param type      return type.
      */
-    public NLIRMethodCall(NBasicBlock block, int id, String mnemonic, String name, ArrayList<NRegister> arguments,
-                          String type) {
+    public NLirCall(NBasicBlock block, int id, String mnemonic, String name, ArrayList<NRegister> arguments,
+                    String type) {
         super(block, id, mnemonic);
         this.name = name;
         for (NRegister arg : arguments) {
             reads.add(arg);
         }
         if (!type.equals("V")) {
-            write = NPhysicalRegister.regInfo[RV];
+            write = regInfo[RV];
             block.cfg.registers.set(RV, write);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinCall(regInfo[RA], -1);
+        block.marvin.add(ins);
     }
 
     /**
@@ -302,22 +193,34 @@ class NLIRMethodCall extends NLIRInstruction {
 }
 
 /**
- * LIR instruction representing a copy instruction.
+ * Representation of an instruction for copying one register into another register.
  */
-class NLIRCopy extends NLIRInstruction {
+class NLirCopy extends NLirInstruction {
     /**
-     * Constructs an NLIRCopy object.
+     * Constructs an NLirCopy object.
      *
      * @param block enclosing block.
-     * @param id    id of the instruction.
+     * @param id    instruction id.
      * @param to    register (virtual or physical) to copy to.
      * @param from  register (virtual or physical) to copy from.
      */
-    public NLIRCopy(NBasicBlock block, int id, NRegister to, NRegister from) {
+    public NLirCopy(NBasicBlock block, int id, NRegister to, NRegister from) {
         super(block, id, "copy");
-        write = to;
         reads.add(from);
-        block.cfg.registers.add(write);
+        write = to;
+        if (write instanceof NPhysicalRegister) {
+            block.cfg.registers.set(write.number, write);
+        } else if (!block.cfg.registers.contains(write)) {
+            block.cfg.registers.add(write);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinCopy(toPhysicalRegister(write), toPhysicalRegister(reads.get(0)));
+        block.marvin.add(ins);
     }
 
     /**
@@ -329,28 +232,259 @@ class NLIRCopy extends NLIRInstruction {
 }
 
 /**
- * LIR instruction representing a load (from memory to register) instruction.
+ * Representation of an instruction for loading an integer.
  */
-class NLIRLoad extends NLIRInstruction {
+class NLirIConst extends NLirInstruction {
     /**
-     * Memory address to load from.
+     * The integer.
      */
-    public NRegister from;
+    public int N;
 
     /**
-     * Constructs an NLIRLoad object.
+     * Constructs an NLirIConst object.
+     *
+     * @param block    enclosing basic block.
+     * @param id       instruction id.
+     * @param mnemonic instruction mnemonic.
+     * @param N        the integer.
+     */
+    public NLirIConst(NBasicBlock block, int id, String mnemonic, int N) {
+        super(block, id, mnemonic);
+        this.N = N;
+        write = new NVirtualRegister(NControlFlowGraph.regId++);
+        if (write instanceof NPhysicalRegister) {
+            block.cfg.registers.set(write.number, write);
+        } else if (!block.cfg.registers.contains(write)) {
+            block.cfg.registers.add(write);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinIConst(toPhysicalRegister(write), N);
+        block.marvin.add(ins);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        return id() + ": " + mnemonic + " " + write + " " + N;
+    }
+}
+
+/**
+ * Representation of an instruction for incrementing (or decrementing) a register by a constant value.
+ */
+class NLirInc extends NLirInstruction {
+    /**
+     * Increment (or decrement) value.
+     */
+    public int N;
+
+    /**
+     * Constructs an NLirInc object.
+     *
+     * @param block    enclosing basic block.
+     * @param id       instruction id.
+     * @param register the register to increment (or decrement).
+     * @param N        increment (or decrement) value.
+     */
+    public NLirInc(NBasicBlock block, int id, NRegister register, int N) {
+        super(block, id, "inc");
+        write = register;
+        this.N = N;
+        if (write instanceof NPhysicalRegister) {
+            block.cfg.registers.set(write.number, write);
+        } else if (!block.cfg.registers.contains(write)) {
+            block.cfg.registers.add(write);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinInc(toPhysicalRegister(write), N);
+        block.marvin.add(ins);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        return id() + ": " + mnemonic + " " + write + " " + N;
+    }
+}
+
+/**
+ * Representation of a jump (conditional or unconditional) jump instruction.
+ */
+class NLirJump extends NLirInstruction {
+    /**
+     * Block to jump to on true.
+     */
+    public NBasicBlock trueBlock;
+
+    /**
+     * Block to jump to on false (null for an unconditional jump).
+     */
+    public NBasicBlock falseBlock;
+
+    /**
+     * Constructs an NLirJump object for an unconditional jump.
+     *
+     * @param block     enclosing block.
+     * @param id        instruction id.
+     * @param mnemonic  instruction mnemonic.
+     * @param trueBlock block to jump to.
+     */
+    public NLirJump(NBasicBlock block, int id, String mnemonic, NBasicBlock trueBlock) {
+        super(block, id, mnemonic);
+        this.trueBlock = trueBlock;
+        falseBlock = null;
+    }
+
+    /**
+     * Constructs an NLirJump object for a conditional jump.
+     *
+     * @param block      enclosing block.
+     * @param id         instruction id.
+     * @param mnemonic   instruction mnemonic.
+     * @param lhs        lhs instruction.
+     * @param rhs        rhs instruction.
+     * @param trueBlock  block to jump to on true.
+     * @param falseBlock block to jump to on false.
+     */
+    public NLirJump(NBasicBlock block, int id, String mnemonic, NLirInstruction lhs, NLirInstruction rhs,
+                    NBasicBlock trueBlock, NBasicBlock falseBlock) {
+        super(block, id, mnemonic);
+        reads.add(lhs.write);
+        reads.add(rhs.write);
+        this.trueBlock = trueBlock;
+        this.falseBlock = falseBlock;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins;
+        if (falseBlock == null) {
+            // Unconditional jump.
+            ins = new NMarvinJump(lir2Marvin.get(mnemonic), -1, false);
+        } else {
+            // Conditional jump.
+            ins = new NMarvinJump(lir2Marvin.get(mnemonic), toPhysicalRegister(reads.get(0)),
+                    toPhysicalRegister(reads.get(1)), -1);
+        }
+        block.marvin.add(ins);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        if (falseBlock == null) {
+            return id() + ": " + mnemonic + " " + trueBlock.id();
+        }
+        return id() + ": " + mnemonic + " " + reads.get(0) + " " + reads.get(1) + " " + trueBlock.id() +
+                " " + falseBlock.id();
+    }
+}
+
+/**
+ * Representation of a load (from memory to register) instruction.
+ */
+class NLirLoad extends NLirInstruction {
+    /**
+     * Constructs an NLirLoad object.
+     *
+     * @param block    enclosing block.
+     * @param id       instruction id.
+     * @param mnemonic instruction mnemonic.
+     * @param to       register (virtual or physical) to store into.
+     * @param from     memory address to load from.
+     */
+    public NLirLoad(NBasicBlock block, int id, String mnemonic, NRegister to, NRegister from) {
+        super(block, id, mnemonic);
+        reads.add(from);
+        write = to;
+        if (write instanceof NPhysicalRegister) {
+            block.cfg.registers.set(write.number, write);
+        } else if (!block.cfg.registers.contains(write)) {
+            block.cfg.registers.add(write);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinLoad(lir2Marvin.get(mnemonic), toPhysicalRegister(write),
+                toPhysicalRegister(reads.get(0)));
+        block.marvin.add(ins);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        return id() + ": " + mnemonic + " " + write + " " + reads.get(0);
+    }
+}
+
+/**
+ * Representation of a phi function.
+ */
+class NLirPhiFunction extends NLirInstruction {
+    /**
+     * Constructs an NLirPhiFunction object.
+     *
+     * @param block    enclosing basic block.
+     * @param id       instruction id.
+     * @param mnemonic instruction mnemonic.
+     */
+    public NLirPhiFunction(NBasicBlock block, int id, String mnemonic) {
+        super(block, id, mnemonic);
+        write = new NVirtualRegister(NControlFlowGraph.regId++);
+        if (write instanceof NPhysicalRegister) {
+            block.cfg.registers.set(write.number, write);
+        } else if (!block.cfg.registers.contains(write)) {
+            block.cfg.registers.add(write);
+        }
+    }
+}
+
+/**
+ * Representation of a pop (from memory to register) instruction.
+ */
+class NLirPop extends NLirInstruction {
+    /**
+     * Constructs an NLirPop object.
      *
      * @param block enclosing block.
-     * @param id    id of the instruction.
+     * @param id    instruction id.
      * @param to    register (virtual or physical) to store into.
-     * @param from  memory from to load from.
+     * @param from  memory address to load from.
      */
-    public NLIRLoad(NBasicBlock block, int id, NRegister to, NRegister from) {
-        super(block, id, "load");
+    public NLirPop(NBasicBlock block, int id, NRegister to, NRegister from) {
+        super(block, id, "pop");
         write = to;
         reads.add(from);
-        this.from = from;
-        block.cfg.registers.add(write);
+        if (!block.cfg.registers.contains(write)) {
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinLoad(lir2Marvin.get(mnemonic), toPhysicalRegister(write),
+                toPhysicalRegister(reads.get(0)));
+        block.marvin.add(ins);
     }
 
     /**
@@ -362,50 +496,18 @@ class NLIRLoad extends NLIRInstruction {
 }
 
 /**
- * LIR instruction representing a store (from register to memory) instruction.
+ * Representation of a push (from register to memory) instruction
  */
-class NLIRStore extends NLIRInstruction {
+class NLirPush extends NLirInstruction {
     /**
-     * Memory address to store at.
-     */
-    public NRegister to;
-
-    /**
-     * Constructs an NLIRStore object.
+     * Constructs an NLirPush object.
      *
      * @param block enclosing block.
-     * @param id    id of the instruction.
+     * @param id    instruction id.
      * @param from  register (virtual or physical) to store from.
      * @param to    memory address to store at.
      */
-    public NLIRStore(NBasicBlock block, int id, NRegister from, NRegister to) {
-        super(block, id, "store");
-        reads.add(from);
-        reads.add(to);
-        this.to = to;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String toString() {
-        return id() + ": " + mnemonic + " " + reads.get(0) + " " + reads.get(1);
-    }
-}
-
-/**
- *
- */
-class NLIRPush extends NLIRInstruction {
-    /**
-     * Constructs an NLIRPush object.
-     *
-     * @param block enclosing block.
-     * @param id    id of the instruction.
-     * @param from  register (virtual or physical) to store from.
-     * @param to    memory address to store at.
-     */
-    public NLIRPush(NBasicBlock block, int id, NRegister from, NRegister to) {
+    public NLirPush(NBasicBlock block, int id, NRegister from, NRegister to) {
         super(block, id, "push");
         reads.add(from);
         reads.add(to);
@@ -414,18 +516,10 @@ class NLIRPush extends NLIRInstruction {
     /**
      * {@inheritDoc}
      */
-    public String toString() {
-        return id() + ": " + mnemonic + " " + reads.get(0) + " " + reads.get(1);
-    }
-}
-
-class NLIRIncrement extends NLIRInstruction {
-    public int value;
-
-    public NLIRIncrement(NBasicBlock block, int id, NRegister register, int value) {
-        super(block, id, "addn");
-        write = register;
-        this.value = value;
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinStore(lir2Marvin.get(mnemonic), toPhysicalRegister(reads.get(0)),
+                toPhysicalRegister(reads.get(1)));
+        block.marvin.add(ins);
     }
 
     /**
@@ -433,5 +527,153 @@ class NLIRIncrement extends NLIRInstruction {
      */
     public String toString() {
         return id() + ": " + mnemonic + " " + reads.get(0) + " " + reads.get(1);
+    }
+}
+
+/**
+ * Representation of an instruction for reading an integer from standard input into a register.
+ */
+class NLirRead extends NLirInstruction {
+    /**
+     * Constructs an NLirRead object.
+     *
+     * @param block    enclosing basic block.
+     * @param id       instruction id.
+     * @param register register to read into.
+     */
+    public NLirRead(NBasicBlock block, int id, NRegister register) {
+        super(block, id, "read");
+        write = register;
+        if (write instanceof NPhysicalRegister) {
+            block.cfg.registers.set(write.number, write);
+        } else if (!block.cfg.registers.contains(write)) {
+            block.cfg.registers.add(write);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinRead(toPhysicalRegister(write));
+        block.marvin.add(ins);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        return id() + ": " + mnemonic + " " + write;
+    }
+}
+
+/**
+ * Representation of a return instruction.
+ */
+class NLirReturn extends NLirInstruction {
+    /**
+     * Constructs an NLirReturn object for return instruction without a value.
+     *
+     * @param block    enclosing block.
+     * @param id       instruction id.
+     * @param mnemonic instruction mnemonic.
+     */
+    public NLirReturn(NBasicBlock block, int id, String mnemonic) {
+        super(block, id, mnemonic);
+    }
+
+    /**
+     * Constructs an NLirReturn object for return instruction with a value.
+     *
+     * @param block    enclosing block.
+     * @param id       instruction id.
+     * @param mnemonic instruction mnemonic.
+     * @param result   physical register storing  the return value.
+     */
+    public NLirReturn(NBasicBlock block, int id, String mnemonic, NPhysicalRegister result) {
+        super(block, id, mnemonic);
+        reads.add(result);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinJump(lir2Marvin.get(mnemonic), -1, true);
+        block.marvin.add(ins);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        return id() + ": " + (reads.isEmpty() ? mnemonic : mnemonic + " " + reads.get(0));
+    }
+}
+
+/**
+ * Representation of a store (from register to memory) instruction.
+ */
+class NLirStore extends NLirInstruction {
+    /**
+     * Constructs an NLirStore object.
+     *
+     * @param block enclosing block.
+     * @param id    instruction id.
+     * @param from  register (virtual or physical) to store from.
+     * @param to    memory address to store at.
+     */
+    public NLirStore(NBasicBlock block, int id, NRegister from, NRegister to) {
+        super(block, id, "store");
+        reads.add(from);
+        reads.add(to);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinStore(lir2Marvin.get(mnemonic), toPhysicalRegister(reads.get(0)),
+                toPhysicalRegister(reads.get(1)));
+        block.marvin.add(ins);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        return id() + ": " + mnemonic + " " + reads.get(0) + " " + reads.get(1);
+    }
+}
+
+/**
+ * Representation of an instruction for writing an integer in a register to standard output.
+ */
+class NLirWrite extends NLirInstruction {
+    /**
+     * Constructs an NLirWrite object.
+     *
+     * @param block    enclosing basic block.
+     * @param id       instruction id.
+     * @param register the register to write.
+     */
+    public NLirWrite(NBasicBlock block, int id, NRegister register) {
+        super(block, id, "write");
+        reads.add(register);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void toMarvin() {
+        NMarvinInstruction ins = new NMarvinWrite(toPhysicalRegister(reads.get(0)));
+        block.marvin.add(ins);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        return id() + ": " + mnemonic + " " + reads.get(0);
     }
 }

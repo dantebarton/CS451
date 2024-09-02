@@ -1,8 +1,11 @@
-// Copyright 2024- Swami Iyer
-
 package iota;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 
 /**
@@ -12,14 +15,18 @@ public class NEmitter {
     // Source program file name.
     private String sourceFile;
 
-    // Maps a method to its control flow graph.
-    private HashMap<CLMethodInfo, NControlFlowGraph> methods;
-
     // Destination directory for the Marvin code (ie, .marv file).
     private String destDir;
 
     // Whether an error occurred while creating/writing Marvin code.
     private boolean errorHasOccurred;
+
+    // List of control flow graphs (one per method in the source program).
+    private ArrayList<NControlFlowGraph> cfgs;
+
+    // Maps method identifier (ie, combination of its name and descriptor) to its address (ie, where the method is
+    // defined in the text segment of Marvin's main memory.
+    private HashMap<String, Integer> methodAddresses;
 
     /**
      * Constructs an NEmitter object.
@@ -31,7 +38,8 @@ public class NEmitter {
      */
     public NEmitter(String sourceFile, CLFile clFile, String ra, boolean verbose) {
         this.sourceFile = sourceFile.substring(sourceFile.lastIndexOf(File.separator) + 1);
-        methods = new HashMap<>();
+        cfgs = new ArrayList<>();
+        methodAddresses = new HashMap<>();
         CLConstantPool cp = clFile.constantPool;
         for (CLMethodInfo mInfo : clFile.methods) {
             String name = new String(((CLConstantUtf8Info) cp.cpItem(mInfo.nameIndex)).b);
@@ -65,12 +73,8 @@ public class NEmitter {
             // Resolve Phi functions by inserting appropriate "copy" instructions in the predecessor blocks.
             cfg.resolvePhiFunctions();
 
-            // Renumber the LIR instructions as 0, 5, 10, and so on. The gaps allow us to insert spill/restore
-            // instructions if needed during register allocation.
-            cfg.renumberLirInstructions();
-
-            // Save the cfg for this method.
-            methods.put(mInfo, cfg);
+            // Renumber the LIR instructions.
+            cfg.renumberLir();
 
             // Perform register allocation.
             NRegisterAllocator regAllocator;
@@ -81,16 +85,33 @@ public class NEmitter {
             }
             regAllocator.run();
 
+            // Handle spills (ie, generate load/store instructions where needed).
+            regAllocator.handleSpills();
+
+            //
+            cfg.lirToMarvin();
+
+            //
+            cfg.prepareMethodEntryAndExit();
+
+            //
+            cfg.resolveJumps(methodAddresses);
+
+            // If verbose output is requested, write the IRs (tuples, HIR, LIR), liveness sets, and liveness
+            // intervals for the cfg to standard output.
             if (verbose) {
-                // Write the IRs (tuples, HIR, LIR), liveness sets, and liveness intervals for cfg to standard output.
                 PrettyPrinter p = new PrettyPrinter();
-                p.printf(">>> %s%s\n", cfg.name, cfg.descriptor);
+                p.printf(">>> %s%s\n\n", cfg.name, cfg.descriptor);
                 cfg.writeTuplesToStdOut(p);
                 cfg.writeHirToStdOut(p);
                 cfg.writeLirToStdOut(p);
                 cfg.writeLivenessSetsToStdOut(p);
                 cfg.writeLivenessIntervalsToStdOut(p);
+                p.println();
             }
+
+            // Save the cfg in the list of cfgs.
+            cfgs.add(cfg);
         }
     }
 
@@ -117,6 +138,27 @@ public class NEmitter {
      * destinationDir() method.
      */
     public void write() {
+        String outFileName = sourceFile.replace(".iota", ".marv");
+        String outFile = destDir + File.separator + outFileName;
+        try {
+            PrintWriter out = new PrintWriter(new FileWriter(outFile));
+
+            // Get address of entry point method.
+            int N = 2; // methodAddresses.get("main()V"); TBD
+
+            out.printf("# %s (last modified: %s)\n\n", outFileName, new Date());
+            out.printf("# Call entry point method main()V\n");
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", 0, "calln", "r12", N, "", "call @" + N);
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n\n", 1, "halt", "", "", "", "halt the machine");
+
+            for (NControlFlowGraph cfg : cfgs) {
+                cfg.write(out);
+            }
+
+            out.close();
+        } catch (IOException e) {
+            reportEmitterError("cannot write to file %s", outFile);
+        }
     }
 
     // Reports any error that occurs while creating/writing the spim file, to standard error.

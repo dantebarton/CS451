@@ -1,5 +1,3 @@
-// Copyright 2024- Swami Iyer
-
 package iota;
 
 import java.io.FileNotFoundException;
@@ -94,7 +92,6 @@ class Main {
         // Generate in-memory JVM bytecode.
         CLEmitter jvmCode = new CLEmitter(false);
         CLEmitter.initializeByteClassLoader();
-        jvmCode.destinationDir(outputDir);
         ast.codegen(jvmCode);
         if (jvmCode.errorHasOccurred()) {
             return;
