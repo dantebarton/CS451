@@ -1,5 +1,3 @@
-// Copyright 2024- Swami Iyer
-//
 // Accepts n (int) from standard input and writes n * n to standard output.
 
 // Returns n^2.

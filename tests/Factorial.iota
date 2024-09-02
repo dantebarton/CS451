@@ -1,29 +1,15 @@
-// Copyright 2024- Swami Iyer
-//
-// Accepts n (int) from standard input and writes n! (computed iteratively and recursively) to standard output.
-
-// Returns n! computed iteratively.
-int factorialIter(int n) {
-    int result = 1;
-    int i = 1;
-    while (i <= n) {
-        result = result * i;
-        i = i + 1;
-    }
-    return result;
-}
+// Accepts n (int) from standard input and writes n! (computed recursively) to standard output.
 
 // Returns n! computed recursively.
-int factorialRec(int n) {
+int factorial(int n) {
     if (n == 0) {
         return 1;
     }
-    return n * factorialRec(n - 1);
+    return n * factorial(n - 1);
 }
 
 // Entry point.
 void main() {
     int n = read();
-    write(factorialIter(n));
-    write(factorialRec(n));
+    write(factorial(n));
 }

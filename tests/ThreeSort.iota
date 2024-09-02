@@ -1,5 +1,3 @@
-// Copyright 2024- Swami Iyer
-//
 // Accepts x (int), y (int), and z (int) from standard input and writes them in sorted order to standard output.
 
 // Returns min(x, y).

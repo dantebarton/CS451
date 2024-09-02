@@ -1,5 +1,3 @@
-// Copyright 2024- Swami Iyer
-//
 // Accepts p (int) and q (int) from standard input and writes the GCD of p and q to standard output.
 
 // Returns GCD of p and q.

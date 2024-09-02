@@ -1,5 +1,3 @@
-// Copyright 2024- Swami Iyer
-//
 // Accepts year (int) from standard input and writes whether year is a leap year (1) or not (0) to standard output.
 
 // Returns true if year is a leap year, and false otherwise.
