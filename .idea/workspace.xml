@@ -7,16 +7,56 @@
     <list default="true" id="635c3b74-0e24-42bf-a84e-cbc6a9391ff1" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bin/iota" beforeDir="false" afterPath="$PROJECT_DIR$/bin/iota" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/bin/iota.bat" beforeDir="false" afterPath="$PROJECT_DIR$/bin/iota.bat" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/bin/marvin.py" beforeDir="false" afterPath="$PROJECT_DIR$/bin/marvin.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build.xml" beforeDir="false" afterPath="$PROJECT_DIR$/build.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/langspec" beforeDir="false" afterPath="$PROJECT_DIR$/langspec" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/CLAttributeInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/CLAttributeInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/CLCPInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/CLCPInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/CLConstantPool.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/CLConstantPool.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/CLConstants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/CLConstants.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/CLEmitter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/CLEmitter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/CLFile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/CLFile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/CLInstruction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/CLInstruction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/CLMemberInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/CLMemberInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/Context.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/Context.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/Defn.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/Defn.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IAST.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IAST.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IBinaryExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IBinaryExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IBlock.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IBlock.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IBooleanBinaryExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IBooleanBinaryExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IComparisonExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IComparisonExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/ICompilationUnit.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/ICompilationUnit.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IFormalParameter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IFormalParameter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IIfStatement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IIfStatement.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/ILiteralBoolean.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/ILiteralBoolean.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/ILiteralInt.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/ILiteralInt.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IMessageExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IMessageExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IMethodDeclaration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IMethodDeclaration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IReturnStatement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IReturnStatement.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IStatement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IStatement.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IStatementExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IStatementExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IUnaryExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IUnaryExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IVariable.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IVariable.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IVariableDeclaration.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IVariableDeclaration.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IWhileStatement.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IWhileStatement.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/IWildExpression.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/IWildExpression.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/LookaheadScanner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/LookaheadScanner.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/Method.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/Method.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/NControlFlowGraph.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NControlFlowGraph.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/NEmitter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NEmitter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/iota/NHIRInstruction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NHIRInstruction.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/iota/NLIRInstruction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NLIRInstruction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/NHirInstruction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NHirInstruction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/NLirInstruction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NLirInstruction.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/NRegister.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NRegister.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/NTuple.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NTuple.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/Parser.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/Parser.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/Scanner.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/Scanner.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/Countdown.marv" beforeDir="false" afterPath="$PROJECT_DIR$/tests/Countdown.marv" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/TokenInfo.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/TokenInfo.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/Type.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/Type.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/package.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/package.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/overview.html" beforeDir="false" afterPath="$PROJECT_DIR$/src/overview.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -44,19 +84,19 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/home/siyer/workspace/dsaj/dsaj",
-    "project.structure.last.edited": "Problems",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "two.files.diff.last.used.file": "/home/siyer/workspace/iota/out.txt"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/home/siyer/workspace/cc/assignments/j--&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Problems&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;two.files.diff.last.used.file&quot;: &quot;/home/siyer/workspace/iota/out.txt&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/tests/jvm" />
