@@ -1,26 +1,9 @@
-// Copyright 2024- Swami Iyer
-
 package iota;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.HashMap;
 
-import static iota.CLConstants.GOTO;
-import static iota.CLConstants.IADD;
-import static iota.CLConstants.IDIV;
-import static iota.CLConstants.IF_ICMPEQ;
-import static iota.CLConstants.IF_ICMPGE;
-import static iota.CLConstants.IF_ICMPGT;
-import static iota.CLConstants.IF_ICMPLE;
-import static iota.CLConstants.IF_ICMPLT;
-import static iota.CLConstants.IF_ICMPNE;
-import static iota.CLConstants.IMUL;
-import static iota.CLConstants.INVOKESTATIC;
-import static iota.CLConstants.IREM;
-import static iota.CLConstants.IRETURN;
-import static iota.CLConstants.ISUB;
-import static iota.CLConstants.LDC;
-import static iota.CLConstants.RETURN;
+import static iota.CLConstants.*;
 import static iota.NPhysicalRegister.*;
 
 /**
@@ -30,55 +13,54 @@ abstract class NHIRInstruction {
     /**
      * Maps JVM opcode to the corresponding HIR mnemonic. For example, maps IMUL to "*".
      */
-    protected static Hashtable<Integer, String> jvm2HIR;
+    protected static HashMap<Integer, String> jvm2HIR;
 
     // Create and populate jvm2HIR.
     static {
-        jvm2HIR = new Hashtable<>();
+        jvm2HIR = new HashMap<>();
+        jvm2HIR.put(LDC, "ldc");
         jvm2HIR.put(IADD, "+");
         jvm2HIR.put(IDIV, "/");
         jvm2HIR.put(IMUL, "*");
         jvm2HIR.put(IREM, "%");
         jvm2HIR.put(ISUB, "-");
-        jvm2HIR.put(LDC, "ldc");
-        jvm2HIR.put(RETURN, "return");
-        jvm2HIR.put(IRETURN, "ireturn");
-        jvm2HIR.put(INVOKESTATIC, "call");
+        jvm2HIR.put(GOTO, "goto");
         jvm2HIR.put(IF_ICMPEQ, "==");
         jvm2HIR.put(IF_ICMPGE, ">=");
         jvm2HIR.put(IF_ICMPGT, ">");
         jvm2HIR.put(IF_ICMPLE, "<=");
         jvm2HIR.put(IF_ICMPLT, "<");
         jvm2HIR.put(IF_ICMPNE, "!=");
-        jvm2HIR.put(GOTO, "goto");
+        jvm2HIR.put(INVOKESTATIC, "invoke");
+        jvm2HIR.put(RETURN, "return");
+        jvm2HIR.put(IRETURN, "ireturn");
     }
 
     /**
      * Maps HIR mnemonic to the corresponding LIR mnemonic. For example, maps "*" to "mul".
      */
-    protected static Hashtable<String, String> hir2lir;
+    protected static HashMap<String, String> hir2lir;
 
     // Create and populate hir2lir.
     static {
-        hir2lir = new Hashtable<>();
+        hir2lir = new HashMap<>();
+        hir2lir.put("phi", "phi");
+        hir2lir.put("ldc", "setn");
         hir2lir.put("+", "add");
         hir2lir.put("/", "div");
         hir2lir.put("*", "mul");
         hir2lir.put("%", "mod");
         hir2lir.put("-", "sub");
-        hir2lir.put("return", "return");
-        hir2lir.put("ireturn", "return");
-        hir2lir.put("call", "call");
         hir2lir.put("goto", "jump");
-        hir2lir.put("ldc", "ldc");
-        hir2lir.put("ldparam", "ldparam");
-        hir2lir.put("phi", "phi");
         hir2lir.put("==", "jeq");
         hir2lir.put(">=", "jge");
         hir2lir.put(">", "jgt");
         hir2lir.put("<=", "jle");
         hir2lir.put("<", "jlt");
         hir2lir.put("!=", "jne");
+        hir2lir.put("invoke", "call");
+        hir2lir.put("return", "return");
+        hir2lir.put("ireturn", "return");
     }
 
     /**
@@ -170,47 +152,6 @@ abstract class NHIRInstruction {
 }
 
 /**
- * HIR instruction representing a formal parameter.
- */
-class NHIRLoadParam extends NHIRInstruction {
-    /**
-     * Formal parameter index.
-     */
-    public int index;
-
-    /**
-     * Constructs an NHIRLoadParam object.
-     *
-     * @param block enclosing basic block.
-     * @param id    id of the instruction.
-     * @param index index of the parameter.
-     */
-    public NHIRLoadParam(NBasicBlock block, int id, int index) {
-        super(block, id, "ldparam", "I");
-        this.index = index;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public NLIRInstruction toLir() {
-        if (lir != null) {
-            return lir;
-        }
-        lir = new NLIRLoadParam(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), index);
-        block.lir.add(lir);
-        return lir;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String toString() {
-        return id() + ": " + mnemonic + " " + index;
-    }
-}
-
-/**
  * HIR instruction representing a phi function.
  */
 class NHIRPhiFunction extends NHIRInstruction {
@@ -257,37 +198,29 @@ class NHIRPhiFunction extends NHIRInstruction {
         for (NHIRInstruction ins : args) {
             s += ins == null ? "?, " : ins.id() + ", ";
         }
-        return s.endsWith(", ") ? s.substring(0, s.length() - 2) + ")" : s + ")";
+        return !s.endsWith(", ") ? s + ")" : s.substring(0, s.length() - 2) + ")";
     }
 }
 
 /**
- * HIR instruction representing a JVM arithmetic instruction.
+ * HIR instruction representing a formal parameter.
  */
-class NHIRArithmetic extends NHIRInstruction {
+class NHIRLoadParam extends NHIRInstruction {
     /**
-     * Lhs id.
+     * Formal parameter index.
      */
-    public int lhs;
+    public int index;
 
     /**
-     * Rhs id.
-     */
-    public int rhs;
-
-    /**
-     * Constructs an NHIRArithmetic object.
+     * Constructs an NHIRLoadParam object.
      *
-     * @param id     id of the instruction.
-     * @param block  enclosing basic block.
-     * @param opcode opcode of the arithmetic instruction.
-     * @param lhs    lhs id.
-     * @param rhs    rhs id.
+     * @param block enclosing basic block.
+     * @param id    id of the instruction.
+     * @param index index of the parameter.
      */
-    public NHIRArithmetic(NBasicBlock block, int id, int opcode, int lhs, int rhs) {
-        super(block, id, jvm2HIR.get(opcode), "I");
-        this.lhs = lhs;
-        this.rhs = rhs;
+    public NHIRLoadParam(NBasicBlock block, int id, int index) {
+        super(block, id, "ldparam", "I");
+        this.index = index;
     }
 
     /**
@@ -297,10 +230,18 @@ class NHIRArithmetic extends NHIRInstruction {
         if (lir != null) {
             return lir;
         }
-        NLIRInstruction lhsLIR = block.cfg.hirMap.get(lhs).toLir();
-        NLIRInstruction rhsLIR = block.cfg.hirMap.get(rhs).toLir();
-        lir = new NLIRArithmetic(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), lhsLIR, rhsLIR);
+        NLIRIntConstant offset = new NLIRIntConstant(block, NControlFlowGraph.lirId++, hir2lir.get("ldc"),
+                -(index + 3));
+        NLIRCopy fp = new NLIRCopy(block, NControlFlowGraph.lirId++, new NVirtualRegister(NControlFlowGraph.regId++),
+                NPhysicalRegister.regInfo[FP]);
+        NLIRArithmetic address = new NLIRArithmetic(block, NControlFlowGraph.lirId++, hir2lir.get("+"), fp, offset);
+        lir = new NLIRLoad(block, NControlFlowGraph.lirId++, new NVirtualRegister(NControlFlowGraph.regId++),
+                address.write);
+        block.lir.add(offset);
+        block.lir.add(fp);
+        block.lir.add(address);
         block.lir.add(lir);
+        block.cfg.registers.set(FP, NPhysicalRegister.regInfo[FP]);
         return lir;
     }
 
@@ -308,12 +249,12 @@ class NHIRArithmetic extends NHIRInstruction {
      * {@inheritDoc}
      */
     public String toString() {
-        return id() + ": " + block.cfg.hirMap.get(lhs).id() + " " + mnemonic + " " + block.cfg.hirMap.get(rhs).id();
+        return id() + ": " + mnemonic + " " + index;
     }
 }
 
 /**
- * HIR instruction representing the JVM LDC instruction.
+ * HIR instruction representing an integer constant.
  */
 class NHIRIntConstant extends NHIRInstruction {
     /**
@@ -354,25 +295,32 @@ class NHIRIntConstant extends NHIRInstruction {
 }
 
 /**
- * HIR instruction representing a JVM return instruction.
+ * HIR instruction representing an arithmetic instruction.
  */
-class NHIRReturn extends NHIRInstruction {
+class NHIRArithmetic extends NHIRInstruction {
     /**
-     * Return value id.
+     * Lhs id.
      */
-    public int value;
+    public int lhs;
 
     /**
-     * Constructs an NHIRReturn object.
+     * Rhs id.
+     */
+    public int rhs;
+
+    /**
+     * Constructs an NHIRArithmetic object.
      *
-     * @param block  enclosing basic block.
      * @param id     id of the instruction.
-     * @param opcode opcode of the JVM return instruction.
-     * @param value  return value id.
+     * @param block  enclosing basic block.
+     * @param opcode opcode of the instruction.
+     * @param lhs    lhs id.
+     * @param rhs    rhs id.
      */
-    public NHIRReturn(NBasicBlock block, int id, int opcode, int value) {
-        super(block, id, jvm2HIR.get(opcode), value == -1 ? "" : "I");
-        this.value = value;
+    public NHIRArithmetic(NBasicBlock block, int id, int opcode, int lhs, int rhs) {
+        super(block, id, jvm2HIR.get(opcode), "I");
+        this.lhs = lhs;
+        this.rhs = rhs;
     }
 
     /**
@@ -382,15 +330,9 @@ class NHIRReturn extends NHIRInstruction {
         if (lir != null) {
             return lir;
         }
-        NLIRInstruction result = null;
-        if (value != -1) {
-            result = block.cfg.hirMap.get(value).toLir();
-            NLIRCopy copy = new NLIRCopy(block, NControlFlowGraph.lirId++, NPhysicalRegister.regInfo[RV], result.write);
-            block.lir.add(copy);
-            block.cfg.registers.set(RV, NPhysicalRegister.regInfo[RV]);
-        }
-        lir = new NLIRReturn(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), result == null ? null :
-                NPhysicalRegister.regInfo[RV]);
+        NLIRInstruction lhsLIR = block.cfg.hirMap.get(lhs).toLir();
+        NLIRInstruction rhsLIR = block.cfg.hirMap.get(rhs).toLir();
+        lir = new NLIRArithmetic(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), lhsLIR, rhsLIR);
         block.lir.add(lir);
         return lir;
     }
@@ -399,83 +341,12 @@ class NHIRReturn extends NHIRInstruction {
      * {@inheritDoc}
      */
     public String toString() {
-        return id() + ": " + (value == -1 ? mnemonic : mnemonic + " " + block.cfg.hirMap.get(value).id());
+        return id() + ": " + block.cfg.hirMap.get(lhs).id() + " " + mnemonic + " " + block.cfg.hirMap.get(rhs).id();
     }
 }
 
 /**
- * HIR instruction representing the JVM INVOKESTATIC instruction.
- */
-class NHIRMethodCall extends NHIRInstruction {
-    /**
-     * Name of the method being invoked.
-     */
-    public String name;
-
-    /**
-     * Arguments to the method.
-     */
-    public ArrayList<Integer> args;
-
-    /**
-     * Constructs an NHIRMethodCall object.
-     *
-     * @param block enclosing basic block.
-     * @param id    id of the instruction.
-     * @param name  name of the method.
-     * @param args  arguments to the method.
-     * @param type  return type.
-     */
-    public NHIRMethodCall(NBasicBlock block, int id, String name, ArrayList<Integer> args, String type) {
-        super(block, id, jvm2HIR.get(INVOKESTATIC), type);
-        this.name = name;
-        this.args = args;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public NLIRInstruction toLir() {
-        if (lir != null) {
-            return lir;
-        }
-        ArrayList<NRegister> arguments = new ArrayList<>();
-        for (int i = 0; i < this.args.size(); i++) {
-            int arg = args.get(i);
-            NLIRInstruction ins = block.cfg.hirMap.get(arg).toLir();
-            arguments.add(ins.write);
-        }
-        lir = new NLIRMethodCall(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), name, arguments, type);
-        block.lir.add(lir);
-
-        // If the function returns a value, generate an LIR copy instruction to save away the value in the physical
-        // register RV into a virtual register.
-        if (lir.write != null) {
-            NVirtualRegister to = new NVirtualRegister(NControlFlowGraph.regId++);
-            NLIRCopy copy = new NLIRCopy(block, NControlFlowGraph.lirId++, to, NPhysicalRegister.regInfo[RV]);
-            block.cfg.registers.add(to);
-            block.lir.add(copy);
-            lir = copy;
-        }
-
-        return lir;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public String toString() {
-        String s = id() + ": " + mnemonic + " " + name + "(";
-        for (int i = 0; i < args.size(); i++) {
-            int arg = args.get(i);
-            s += block.cfg.hirMap.get(arg).id() + ", ";
-        }
-        return s.endsWith(", ") ? s.substring(0, s.length() - 2) + ")" : s + ")";
-    }
-}
-
-/**
- * HIR instruction representing JVM jump instructions.
+ * HIR instruction representing conditional or unconditional jump instruction.
  */
 class NHIRJump extends NHIRInstruction {
     /**
@@ -499,11 +370,25 @@ class NHIRJump extends NHIRInstruction {
     public NBasicBlock onFalseBlock;
 
     /**
-     * Constructs an NHIRConditionalJump object.
+     * Constructs an NHIRJump object for an unconditional jump.
+     *
+     * @param block       enclosing basic block.
+     * @param id          id of the instruction.
+     * @param onTrueBlock block to jump to.
+     */
+    public NHIRJump(NBasicBlock block, int id, NBasicBlock onTrueBlock) {
+        super(block, id, jvm2HIR.get(GOTO));
+        lhs = -1;
+        rhs = -1;
+        this.onTrueBlock = onTrueBlock;
+    }
+
+    /**
+     * Constructs an NHIRJump object for a conditional jump.
      *
      * @param block        enclosing basic block.
      * @param id           id of the instruction.
-     * @param opcode       opcode of the JVM instruction.
+     * @param opcode       opcode of the instruction.
      * @param lhs          Lhs id.
      * @param rhs          Rhs id.
      * @param onTrueBlock  block to jump to on true.
@@ -548,5 +433,143 @@ class NHIRJump extends NHIRInstruction {
         }
         return id() + ": if " + block.cfg.hirMap.get(lhs).id() + " " + mnemonic + " " +
                 block.cfg.hirMap.get(rhs).id() + " then " + onTrueBlock.id() + " else " + onFalseBlock.id();
+    }
+}
+
+/**
+ * HIR instruction representing a return instruction.
+ */
+class NHIRReturn extends NHIRInstruction {
+    /**
+     * Return value id.
+     */
+    public int value;
+
+    /**
+     * Constructs an NHIRReturn object for return instruction without a value.
+     *
+     * @param block enclosing basic block.
+     * @param id    id of the instruction.
+     */
+    public NHIRReturn(NBasicBlock block, int id) {
+        super(block, id, jvm2HIR.get(RETURN), "");
+        this.value = -1;
+    }
+
+    /**
+     * Constructs an NHIRReturn object for return instruction with a value.
+     *
+     * @param block enclosing basic block.
+     * @param id    id of the instruction.
+     * @param value return value id.
+     */
+    public NHIRReturn(NBasicBlock block, int id, int value) {
+        super(block, id, jvm2HIR.get(IRETURN), "I");
+        this.value = value;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NLIRInstruction toLir() {
+        if (lir != null) {
+            return lir;
+        }
+        NLIRInstruction result = null;
+        if (value == -1) {
+            lir = new NLIRReturn(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic));
+        } else {
+            result = block.cfg.hirMap.get(value).toLir();
+            NLIRCopy copy = new NLIRCopy(block, NControlFlowGraph.lirId++, NPhysicalRegister.regInfo[RV], result.write);
+            block.lir.add(copy);
+            block.cfg.registers.set(RV, NPhysicalRegister.regInfo[RV]);
+            lir = new NLIRReturn(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic),
+                    NPhysicalRegister.regInfo[RV]);
+        }
+        block.lir.add(lir);
+        return lir;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        return id() + ": " + (value == -1 ? mnemonic : mnemonic + " " + block.cfg.hirMap.get(value).id());
+    }
+}
+
+/**
+ * HIR instruction representing a method call instruction.
+ */
+class NHIRMethodCall extends NHIRInstruction {
+    /**
+     * Name of the method.
+     */
+    public String name;
+
+    /**
+     * Arguments to the method.
+     */
+    public ArrayList<Integer> args;
+
+    /**
+     * Constructs an NHIRMethodCall object.
+     *
+     * @param block enclosing basic block.
+     * @param id    id of the instruction.
+     * @param name  name of the method.
+     * @param args  arguments to the method.
+     * @param type  return type.
+     */
+    public NHIRMethodCall(NBasicBlock block, int id, String name, ArrayList<Integer> args, String type) {
+        super(block, id, jvm2HIR.get(INVOKESTATIC), type);
+        this.name = name;
+        this.args = args;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public NLIRInstruction toLir() {
+        if (lir != null) {
+            return lir;
+        }
+        ArrayList<NRegister> arguments = new ArrayList<>();
+
+        for (int i = args.size() - 1; i >= 0; i--) {
+            int arg = args.get(i);
+            NLIRInstruction ins = block.cfg.hirMap.get(arg).toLir();
+            arguments.add(0, ins.write);
+            NLIRPush push = new NLIRPush(block, NControlFlowGraph.lirId++, ins.write, NPhysicalRegister.regInfo[SP]);
+            block.lir.add(push);
+        }
+
+        lir = new NLIRMethodCall(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), name, arguments, type);
+        block.lir.add(lir);
+        if (lir.write != null) {
+            NVirtualRegister to = new NVirtualRegister(NControlFlowGraph.regId++);
+            NLIRCopy copy = new NLIRCopy(block, NControlFlowGraph.lirId++, to, NPhysicalRegister.regInfo[RV]);
+            block.cfg.registers.add(to);
+            block.lir.add(copy);
+            lir = copy;
+        }
+
+        NLIRIncrement add = new NLIRIncrement(block, NControlFlowGraph.lirId++, NPhysicalRegister.regInfo[SP],
+                -args.size());
+        block.lir.add(add);
+
+        return lir;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String toString() {
+        String s = id() + ": " + mnemonic + " " + name + "(";
+        for (int i = 0; i < args.size(); i++) {
+            int arg = args.get(i);
+            s += block.cfg.hirMap.get(arg).id() + ", ";
+        }
+        return !s.endsWith(", ") ? s + ")" : s.substring(0, s.length() - 2) + ")";
     }
 }
