@@ -25,7 +25,7 @@ class NInterval {
     /**
      * ID of the register (virtual or physical) that is attached to this interval.
      */
-    public int regId;
+    public int registerId;
 
     /**
      * The sequence of ranges for this interval.
@@ -40,10 +40,10 @@ class NInterval {
     /**
      * Constructs an NInterval object.
      *
-     * @param regId ID of the register (virtual or physical) that is attached to this interval.
+     * @param registerId ID of the register (virtual or physical) that is attached to this interval.
      */
-    public NInterval(int regId) {
-        this.regId = regId;
+    public NInterval(int registerId) {
+        this.registerId = registerId;
         ranges = new ArrayList<>();
         usePositions = new HashMap<>();
     }
@@ -69,7 +69,7 @@ class NInterval {
      */
     public void addRange(NRange range) {
         if (!ranges.isEmpty()) {
-            if (range.stop + 10 == ranges.get(0).start || range.intersects(ranges.get(0))) {
+            if (range.stop + 5 == ranges.get(0).start || range.intersects(ranges.get(0))) {
                 ranges.get(0).start = range.start;
             } else {
                 ranges.add(0, range);

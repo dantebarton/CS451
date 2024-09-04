@@ -449,14 +449,9 @@ class NHirLoadParam extends NHirInstruction {
         if (lir != null) {
             return lir;
         }
-        NLirCopy fp = new NLirCopy(block, NControlFlowGraph.lirId++, regInfo[R11], regInfo[FP]);
-        NLirInc address = new NLirInc(block, NControlFlowGraph.lirId++, fp.write, -(index + 3));
         NVirtualRegister param = new NVirtualRegister(NControlFlowGraph.regId++);
-        lir = new NLirLoad(block, NControlFlowGraph.lirId++, "load", param, address.write);
-        block.lir.add(fp);
-        block.lir.add(address);
+        lir = new NLirLoad(block, NControlFlowGraph.lirId++, "load", param, regInfo[FP], -(index + 3));
         block.lir.add(lir);
-        block.cfg.registers.set(R11, regInfo[R11]);
         block.cfg.registers.set(FP, regInfo[FP]);
         return lir;
     }

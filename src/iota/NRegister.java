@@ -84,7 +84,7 @@ class NPhysicalRegister extends NRegister {
     /**
      * Maximum number of temporary registers available for allocation.
      */
-    public static final int MAX_COUNT = 11;
+    public static final int MAX_COUNT = 12;
 
     /**
      * Temporary register, R0.

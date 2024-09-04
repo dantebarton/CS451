@@ -315,63 +315,42 @@ class NMarvinLoad extends NMarvinInstruction {
     public NPhysicalRegister rX;
 
     /**
-     * What to load.
+     * Base memory address.
      */
     public NPhysicalRegister rY;
+
+    /**
+     * Offset (from base memory address) of the value to load.
+     */
+    public int N;
 
     /**
      * Constructs an NMarvinLoad object.
      *
      * @param mnemonic instruction mnemonic.
      * @param rX       where to load.
-     * @param rY       what to load.
+     * @param rY       Base memory address.
      */
     public NMarvinLoad(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY) {
         super(mnemonic);
         this.rX = rX;
         this.rY = rY;
+        this.N = -1;
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public void write(PrintWriter out) {
-        String comment;
-        if (mnemonic.equals("loadr")) {
-            comment = rX + " = mem[" + rY + "]";
-        } else {
-            // Must be "popr".
-            comment = rX + " = mem[--" + rY + "]";
-        }
-        out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, "", comment);
-    }
-}
-
-/**
- * Representation of an instruction for storing a value from register into memory.
- */
-class NMarvinStore extends NMarvinInstruction {
-    /**
-     * What to store.
-     */
-    public NPhysicalRegister rX;
-
-    /**
-     * Where to store.
-     */
-    public NPhysicalRegister rY;
-
-    /**
-     * Constructs an NMarvinStore object.
+     * Constructs an NMarvinLoad object.
      *
      * @param mnemonic instruction mnemonic.
-     * @param rX       what to store.
-     * @param rY       where to store.
+     * @param rX       where to load.
+     * @param rY       Base memory address.
+     * @param N        offset (from base memory address) of the value to load.
      */
-    public NMarvinStore(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY) {
+    public NMarvinLoad(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY, int N) {
         super(mnemonic);
         this.rX = rX;
         this.rY = rY;
+        this.N = N;
     }
 
     /**
@@ -379,11 +358,11 @@ class NMarvinStore extends NMarvinInstruction {
      */
     public void write(PrintWriter out) {
         String comment;
-        if (mnemonic.equals("storer")) {
-            comment = "mem[" + rY + "]" + " = " + rX;
+        if (mnemonic.equals("loadn")) {
+            comment = rX + " = mem[" + rY + " + " + N + "]";
         } else {
-            // Must be "pushr".
-            comment = "mem[" + rY + "++]" + " = " + rX;
+            // Must be "popr".
+            comment = rX + " = mem[--" + rY + "]";
         }
         out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, "", comment);
     }
@@ -414,6 +393,69 @@ class NMarvinRead extends NMarvinInstruction {
     public void write(PrintWriter out) {
         String comment = rX + " = read()";
         out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, "", "", comment);
+    }
+}
+
+/**
+ * Representation of an instruction for storing a value from register into memory.
+ */
+class NMarvinStore extends NMarvinInstruction {
+    /**
+     * Value to store.
+     */
+    public NPhysicalRegister rX;
+
+    /**
+     * Base memory address.
+     */
+    public NPhysicalRegister rY;
+
+    /**
+     * Offset (from base memory address) where the value will be stored.
+     */
+    public int N;
+
+    /**
+     * Constructs an NMarvinStore object.
+     *
+     * @param mnemonic instruction mnemonic.
+     * @param rX       what to store.
+     * @param rY       base memory address.
+     */
+    public NMarvinStore(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY) {
+        super(mnemonic);
+        this.rX = rX;
+        this.rY = rY;
+        this.N = -1;
+    }
+
+    /**
+     * Constructs an NMarvinStore object.
+     *
+     * @param mnemonic instruction mnemonic.
+     * @param rX       what to store.
+     * @param rY       base memory address.
+     * @param N        offset (from base memory address) where the value will be stored.
+     */
+    public NMarvinStore(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY, int N) {
+        super(mnemonic);
+        this.rX = rX;
+        this.rY = rY;
+        this.N = N;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void write(PrintWriter out) {
+        String comment;
+        if (mnemonic.equals("storen")) {
+            comment = "mem[" + rY + " + " + N + "]" + " = " + rX;
+        } else {
+            // Must be "pushr".
+            comment = "mem[" + rY + "++]" + " = " + rX;
+        }
+        out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, "", comment);
     }
 }
 

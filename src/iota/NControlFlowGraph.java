@@ -282,7 +282,7 @@ class NControlFlowGraph {
     /**
      * Physical registers used in this cfg.
      */
-    public ArrayList<NRegister> pRegisters;
+    public ArrayList<NPhysicalRegister> pRegisters;
 
     /**
      * Constructs a ControlFlowGraph object for a method.
@@ -657,7 +657,7 @@ class NControlFlowGraph {
     }
 
     /**
-     * Assigns new ids (0, 10, 20, and so on) to the LIR instructions in this cfg. The gaps allow us to insert
+     * Assigns new ids (0, 5, 10, and so on) to the LIR instructions in this cfg. The gaps allow us to insert
      * spill/restore instructions if needed during register allocation.
      */
     public void renumberLir() {
@@ -666,7 +666,7 @@ class NControlFlowGraph {
             ArrayList<NLirInstruction> newLir = new ArrayList<>();
             for (NLirInstruction lir : block.lir) {
                 lir.id = nextId;
-                nextId += 10;
+                nextId += 5;
                 newLir.add(lir);
             }
             block.lir = newLir;
@@ -801,9 +801,9 @@ class NControlFlowGraph {
         p.printf("[[ Liveness Intervals ]]\n\n");
         for (NInterval interval : intervals) {
             if (!interval.ranges.isEmpty()) {
-                String id = "" + interval.regId;
-                if (registers.get(interval.regId) instanceof NVirtualRegister) {
-                    NVirtualRegister reg = (NVirtualRegister) registers.get(interval.regId);
+                String id = "" + interval.registerId;
+                if (registers.get(interval.registerId) instanceof NVirtualRegister) {
+                    NVirtualRegister reg = (NVirtualRegister) registers.get(interval.registerId);
                     if (reg.spill) {
                         p.printf("v%s: %s -> %s:%s \n", id, interval, reg.pReg, reg.offset);
                     } else {

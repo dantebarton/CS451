@@ -48,12 +48,8 @@ abstract class NRegisterAllocator {
                 if (lir.write != null && lir.write instanceof NVirtualRegister) {
                     NVirtualRegister write = (NVirtualRegister) lir.write;
                     if (write.spill) {
-                        NLirCopy sp = new NLirCopy(block, lir.id + 1, regInfo[R11], regInfo[SP]);
-                        NLirInc address = new NLirInc(block, lir.id + 2, sp.write, write.offset);
-                        NLirStore store = new NLirStore(block, lir.id + 3, write.pReg, address.write);
-                        newLir.add(newLir.indexOf(lir) + 1, sp);
-                        newLir.add(newLir.indexOf(lir) + 2, address);
-                        newLir.add(newLir.indexOf(lir) + 3, store);
+                        NLirStore store = new NLirStore(block, lir.id + 1, write.pReg, regInfo[SP], write.offset);
+                        newLir.add(newLir.indexOf(lir) + 1, store);
                     }
                 }
 
@@ -63,21 +59,17 @@ abstract class NRegisterAllocator {
                 }
 
                 //
-                if (lir.reads.size() == 1) {
-                    NRegister reg = lir.reads.get(0);
+                for (int i = 0; i < lir.reads.size(); i++) {
+                    NRegister reg = lir.reads.get(i);
                     if (reg instanceof NVirtualRegister) {
                         NVirtualRegister read = (NVirtualRegister) reg;
                         if (read.spill) {
-                            NLirCopy sp = new NLirCopy(block, lir.id - 3, regInfo[R11], regInfo[SP]);
-                            NLirInc address = new NLirInc(block, lir.id - 2, sp.write, read.offset);
-                            NLirLoad load = new NLirLoad(block, lir.id - 1, "load", read.pReg, address.write);
-                            newLir.add(newLir.indexOf(lir) - 3, sp);
-                            newLir.add(newLir.indexOf(lir) - 3, address);
-                            newLir.add(newLir.indexOf(lir) - 3, load);
+                            NLirLoad load = new NLirLoad(block, lir.id - (lir.reads.size() - i), "load",
+                                    read.pReg, regInfo[SP],
+                                    read.offset);
+                            newLir.add(newLir.indexOf(lir), load);
                         }
                     }
-                } else if (lir.reads.size() == 2) {
-
                 }
             }
             block.lir = newLir;

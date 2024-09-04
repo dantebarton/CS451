@@ -25,11 +25,11 @@ abstract class NLirInstruction {
         lir2Marvin.put("jlt", "jltn");
         lir2Marvin.put("jne", "jnen");
         lir2Marvin.put("jump", "jumpr");
-        lir2Marvin.put("load", "loadr");
+        lir2Marvin.put("load", "loadn");
         lir2Marvin.put("pop", "popr");
         lir2Marvin.put("push", "pushr");
         lir2Marvin.put("return", "jumpr");
-        lir2Marvin.put("store", "storer");
+        lir2Marvin.put("store", "storen");
     }
 
     /**
@@ -400,18 +400,25 @@ class NLirJump extends NLirInstruction {
  */
 class NLirLoad extends NLirInstruction {
     /**
+     * Offset from the base memory address to load from.
+     */
+    public int N;
+
+    /**
      * Constructs an NLirLoad object.
      *
      * @param block    enclosing block.
      * @param id       instruction id.
      * @param mnemonic instruction mnemonic.
      * @param to       register (virtual or physical) to store into.
-     * @param from     memory address to load from.
+     * @param from     base memory address.
+     * @param N        offset from base memory address to load from.
      */
-    public NLirLoad(NBasicBlock block, int id, String mnemonic, NRegister to, NRegister from) {
+    public NLirLoad(NBasicBlock block, int id, String mnemonic, NRegister to, NRegister from, int N) {
         super(block, id, mnemonic);
         reads.add(from);
         write = to;
+        this.N = N;
         if (write instanceof NPhysicalRegister) {
             block.cfg.registers.set(write.number, write);
         } else if (!block.cfg.registers.contains(write)) {
@@ -424,7 +431,7 @@ class NLirLoad extends NLirInstruction {
      */
     public void toMarvin() {
         NMarvinInstruction ins = new NMarvinLoad(lir2Marvin.get(mnemonic), toPhysicalRegister(write),
-                toPhysicalRegister(reads.get(0)));
+                toPhysicalRegister(reads.get(0)), N);
         block.marvin.add(ins);
     }
 
@@ -432,7 +439,7 @@ class NLirLoad extends NLirInstruction {
      * {@inheritDoc}
      */
     public String toString() {
-        return id() + ": " + mnemonic + " " + write + " " + reads.get(0);
+        return id() + ": " + mnemonic + " " + write + " " + reads.get(0) + " " + N;
     }
 }
 
@@ -483,7 +490,7 @@ class NLirPop extends NLirInstruction {
      */
     public void toMarvin() {
         NMarvinInstruction ins = new NMarvinLoad(lir2Marvin.get(mnemonic), toPhysicalRegister(write),
-                toPhysicalRegister(reads.get(0)));
+                toPhysicalRegister(reads.get(0)), -1);
         block.marvin.add(ins);
     }
 
@@ -616,17 +623,24 @@ class NLirReturn extends NLirInstruction {
  */
 class NLirStore extends NLirInstruction {
     /**
+     * Offset from the base memory address to store at.
+     */
+    public int N;
+
+    /**
      * Constructs an NLirStore object.
      *
      * @param block enclosing block.
      * @param id    instruction id.
      * @param from  register (virtual or physical) to store from.
-     * @param to    memory address to store at.
+     * @param to    base memory address.
+     * @param N     offset from the base memory address to store at.
      */
-    public NLirStore(NBasicBlock block, int id, NRegister from, NRegister to) {
+    public NLirStore(NBasicBlock block, int id, NRegister from, NRegister to, int N) {
         super(block, id, "store");
         reads.add(from);
         reads.add(to);
+        this.N = N;
     }
 
     /**
@@ -634,7 +648,7 @@ class NLirStore extends NLirInstruction {
      */
     public void toMarvin() {
         NMarvinInstruction ins = new NMarvinStore(lir2Marvin.get(mnemonic), toPhysicalRegister(reads.get(0)),
-                toPhysicalRegister(reads.get(1)));
+                toPhysicalRegister(reads.get(1)), N);
         block.marvin.add(ins);
     }
 
@@ -642,7 +656,7 @@ class NLirStore extends NLirInstruction {
      * {@inheritDoc}
      */
     public String toString() {
-        return id() + ": " + mnemonic + " " + reads.get(0) + " " + reads.get(1);
+        return id() + ": " + mnemonic + " " + reads.get(0) + " " + reads.get(1) + " " + N;
     }
 }
 
