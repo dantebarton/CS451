@@ -88,15 +88,6 @@ public class NEmitter {
             // Handle spills (ie, generate load/store instructions where needed).
             regAllocator.handleSpills();
 
-            //
-            cfg.lirToMarvin();
-
-            //
-            cfg.prepareMethodEntryAndExit();
-
-            //
-            cfg.resolveJumps(methodAddresses);
-
             // If verbose output is requested, write the IRs (tuples, HIR, LIR), liveness sets, and liveness
             // intervals for the cfg to standard output.
             if (verbose) {
@@ -109,6 +100,15 @@ public class NEmitter {
                 cfg.writeLivenessIntervalsToStdOut(p);
                 p.println();
             }
+
+            //
+            cfg.lirToMarvin();
+
+            //
+            cfg.prepareMethodEntryAndExit();
+
+            //
+            cfg.resolveJumps(methodAddresses);
 
             // Save the cfg in the list of cfgs.
             cfgs.add(cfg);

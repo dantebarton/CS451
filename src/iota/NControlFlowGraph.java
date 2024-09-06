@@ -688,7 +688,33 @@ class NControlFlowGraph {
      *
      */
     public void prepareMethodEntryAndExit() {
+        NBasicBlock entry = basicBlocks.get(0);
+        NMarvinInstruction instruction = new NMarvinStore("pushr", regInfo[RA], regInfo[SP]);
+        int i = 0;
+        entry.marvin.add(i++, instruction);
+        instruction = new NMarvinStore("pushr", regInfo[FP], regInfo[SP]);
+        entry.marvin.add(i++, instruction);
+        instruction = new NMarvinCopy(regInfo[FP], regInfo[SP]);
+        entry.marvin.add(i++, instruction);
+        for (int j = 0; j < pRegisters.size(); j++) {
+            NPhysicalRegister pRegister = pRegisters.get(j);
+            instruction = new NMarvinStore("pushr", pRegister, regInfo[SP]);
+            entry.marvin.add(i++, instruction);
+        }
 
+        NBasicBlock exit = new NBasicBlock(this, basicBlocks.size());
+        for (int j = pRegisters.size() - 1; j >= 0; j--) {
+            NPhysicalRegister pRegister = pRegisters.get(j);
+            instruction = new NMarvinLoad("popr", pRegister, regInfo[SP]);
+            exit.marvin.add(instruction);
+        }
+        instruction = new NMarvinLoad("popr", regInfo[FP], regInfo[SP]);
+        exit.marvin.add(instruction);
+        instruction = new NMarvinLoad("popr", regInfo[RA], regInfo[SP]);
+        exit.marvin.add(instruction);
+        instruction = new NMarvinJump("jumpr", regInfo[RA], null, 0, false);
+        exit.marvin.add(instruction);
+        basicBlocks.add(exit);
     }
 
     /**
@@ -823,6 +849,7 @@ class NControlFlowGraph {
     public void write(PrintWriter out) {
         out.printf("# %s%s\n", name, descriptor);
         for (NBasicBlock block : basicBlocks) {
+            out.println();
             for (NMarvinInstruction ins : block.marvin) {
                 ins.write(out);
             }

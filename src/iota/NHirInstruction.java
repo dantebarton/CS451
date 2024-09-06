@@ -45,7 +45,7 @@ abstract class NHirInstruction {
     static {
         hir2lir = new HashMap<>();
         hir2lir.put("phi", "phi");
-        hir2lir.put("ldc", "setn");
+        hir2lir.put("ldc", "set");
         hir2lir.put("+", "add");
         hir2lir.put("/", "div");
         hir2lir.put("*", "mul");
@@ -246,18 +246,14 @@ class NHirCall extends NHirInstruction {
             lir = new NLirWrite(block, NControlFlowGraph.lirId++, arg.write);
             block.lir.add(lir);
         } else {
-            ArrayList<NRegister> arguments = new ArrayList<>();
-
             // Arguments are passed by storing them in memory.
             for (int i = args.size() - 1; i >= 0; i--) {
                 NLirInstruction argIns = block.cfg.hirMap.get(args.get(i)).toLir();
-                arguments.add(0, argIns.write);
                 NLirPush arg = new NLirPush(block, NControlFlowGraph.lirId++, argIns.write, regInfo[SP]);
                 block.lir.add(arg);
             }
 
-            NLirCall call = new NLirCall(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), name, arguments,
-                    type);
+            NLirCall call = new NLirCall(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic));
             block.lir.add(call);
 
             // Pop the stack frame that was set up for and by the method call.
@@ -397,13 +393,13 @@ class NHirJump extends NHirInstruction {
         }
         if (falseBlock == null) {
             // Unconditional jump.
-            lir = new NLirJump(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), trueBlock);
+            lir = new NLirJump(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), null, null, trueBlock, null, false);
         } else {
             // Conditional jump.
             NLirInstruction lhsIns = block.cfg.hirMap.get(lhs).toLir();
             NLirInstruction rhsIns = block.cfg.hirMap.get(rhs).toLir();
             lir = new NLirJump(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), lhsIns, rhsIns, trueBlock,
-                    falseBlock);
+                    falseBlock, false);
         }
         block.lir.add(lir);
         return lir;
@@ -558,16 +554,13 @@ class NHirReturn extends NHirInstruction {
         if (lir != null) {
             return lir;
         }
-        NLirInstruction result = null;
-        if (value == -1) {
-            lir = new NLirReturn(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic));
-        } else {
-            result = block.cfg.hirMap.get(value).toLir();
+        if (value != -1) {
+            NLirInstruction result = block.cfg.hirMap.get(value).toLir();
             NLirCopy rv = new NLirCopy(block, NControlFlowGraph.lirId++, regInfo[RV], result.write);
             block.lir.add(rv);
             block.cfg.registers.set(RV, regInfo[RV]);
-            lir = new NLirReturn(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), regInfo[RV]);
         }
+        lir = new NLirJump(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), null, null, null, null, true);
         block.lir.add(lir);
         return lir;
     }

@@ -199,7 +199,11 @@ class NMarvinIConst extends NMarvinInstruction {
      */
     public void write(PrintWriter out) {
         String comment = rX + " = " + N;
-        out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, N, "", comment);
+        if (mnemonic.equals("set0") || mnemonic.equals("set1")) {
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, "", "", comment);
+        } else {
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, N, "", comment);
+        }
     }
 }
 
@@ -263,31 +267,20 @@ class NMarvinJump extends NMarvinInstruction {
     public boolean returnFromMethod;
 
     /**
-     * Constructs an NMarvinJump object for an unconditional jump.
-     *
-     * @param mnemonic         instruction mnemonic.
-     * @param N                jump address.
-     * @param returnFromMethod whether the jump is to return from a method.
-     */
-    public NMarvinJump(String mnemonic, int N, boolean returnFromMethod) {
-        super(mnemonic);
-        this.N = N;
-        this.returnFromMethod = returnFromMethod;
-    }
-
-    /**
      * Constructs an NMarvinJump object for a conditional jump.
      *
      * @param mnemonic instruction mnemonic.
      * @param rX       lhs of the condition.
      * @param rY       rhs of the condition.
      * @param N        jump address.
+     * @param returnFromMethod whether the jump (if unconditional) is to return from a method.
      */
-    public NMarvinJump(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY, int N) {
+    public NMarvinJump(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY, int N, boolean returnFromMethod) {
         super(mnemonic);
         this.rX = rX;
         this.rY = rY;
         this.N = N;
+        this.returnFromMethod = returnFromMethod;
     }
 
     /**
@@ -295,9 +288,12 @@ class NMarvinJump extends NMarvinInstruction {
      */
     public void write(PrintWriter out) {
         String comment;
-        if (rX == null) {
+        if (mnemonic.equals("jumpn")) {
             comment = "jump to " + N;
             out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, N, "", "", comment);
+        } else if (mnemonic.equals("jumpr")) {
+            comment = "jump to " + rX;
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, "", "", comment);
         } else {
             comment = "if " + rX + " " + mnemonic2Op.get(mnemonic) + " " + rY + " jump to " + N;
             out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, N, comment);
