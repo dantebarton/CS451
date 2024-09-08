@@ -5,13 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="635c3b74-0e24-42bf-a84e-cbc6a9391ff1" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/lib.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/lib.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/NControlFlowGraph.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NControlFlowGraph.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/NEmitter.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NEmitter.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/NHirInstruction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NHirInstruction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/NInterval.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NInterval.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/NLirInstruction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NLirInstruction.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/iota/NMarvinInstruction.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NMarvinInstruction.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/NNaiveRegisterAllocator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NNaiveRegisterAllocator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/NRegister.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NRegister.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/NRegisterAllocator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NRegisterAllocator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/iota/NTuple.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/iota/NTuple.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
