@@ -13,9 +13,9 @@ void perfectNumbers(int n) {
             }
             j = j + 1;
         }
-        if (sum == n) {
-            // n is perfect.
-            write(n);
+        if (sum == i) {
+            // i is perfect.
+            write(i);
         }
         i = i + 1;
     }
