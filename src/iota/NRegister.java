@@ -35,14 +35,13 @@ abstract class NRegister {
     }
 
     /**
-     * Returns the physical register associated with the given register.
+     * Returns the physical reg associated with the given reg.
      *
-     * @param register the register.
-     * @return the physical register associated with the given register.
+     * @param reg the reg.
+     * @return the physical reg associated with the given reg.
      */
-    public static NPhysicalRegister toPhysicalRegister(NRegister register) {
-        return register instanceof NPhysicalRegister ? (NPhysicalRegister) register :
-                ((NVirtualRegister) register).pReg;
+    public static NPhysicalRegister toPhysicalRegister(NRegister reg) {
+        return reg instanceof NPhysicalRegister ? (NPhysicalRegister) reg : ((NVirtualRegister) reg).pReg;
     }
 }
 

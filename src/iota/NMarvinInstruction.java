@@ -103,6 +103,16 @@ class NMarvinArithmetic extends NMarvinInstruction {
  */
 class NMarvinCall extends NMarvinInstruction {
     /**
+     * Method name.
+     */
+    public String name;
+
+    /**
+     * Method descriptor.
+     */
+    public String desc;
+
+    /**
      * Return address.
      */
     public NPhysicalRegister rX;
@@ -115,11 +125,15 @@ class NMarvinCall extends NMarvinInstruction {
     /**
      * Constructs an NMarvinCall object.
      *
-     * @param rX return address.
-     * @param N  address where the method is defined.
+     * @param name method name.
+     * @param desc method descriptor.
+     * @param rX   return address.
+     * @param N    address where the method is defined.
      */
-    public NMarvinCall(NPhysicalRegister rX, int N) {
+    public NMarvinCall(String name, String desc, NPhysicalRegister rX, int N) {
         super("calln");
+        this.name = name;
+        this.desc = desc;
         this.rX = rX;
         this.N = N;
     }
@@ -247,19 +261,24 @@ class NMarvinInc extends NMarvinInstruction {
  */
 class NMarvinJump extends NMarvinInstruction {
     /**
-     * Lhs of the condition (null for an unconditional jump).
+     * Lhs of the condition (null for an unconditional jump and return from a method).
      */
     public NPhysicalRegister rX;
 
     /**
-     * Rhs of the condition (null for an unconditional jump).
+     * Rhs of the condition (null for an unconditional jump and return from a method).
      */
     public NPhysicalRegister rY;
 
     /**
-     * Jump address.
+     * Block to jump to on true (null for return from a method).
      */
-    public int N;
+    public NBasicBlock trueBlock;
+
+    /**
+     * Block to jump to on false (null for an unconditional jump and return from a method).
+     */
+    public NBasicBlock falseBlock;
 
     /**
      * Whether the jump (if unconditional) is to return from a method.
@@ -267,20 +286,29 @@ class NMarvinJump extends NMarvinInstruction {
     public boolean returnFromMethod;
 
     /**
-     * Constructs an NMarvinJump object for a conditional jump.
+     * Program counter of the instruction to jump to.
+     */
+    public int N;
+
+    /**
+     * Constructs an NMarvinJump object for a jump.
      *
-     * @param mnemonic instruction mnemonic.
-     * @param rX       lhs of the condition.
-     * @param rY       rhs of the condition.
-     * @param N        jump address.
+     * @param mnemonic         instruction mnemonic.
+     * @param rX               lhs of the condition (null for return from method).
+     * @param rY               rhs of the condition (null for return from method).
+     * @param trueBlock        block to jump to on true.
+     * @param falseBlock       block to jump to on false.
      * @param returnFromMethod whether the jump (if unconditional) is to return from a method.
      */
-    public NMarvinJump(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY, int N, boolean returnFromMethod) {
+    public NMarvinJump(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY,
+                       NBasicBlock trueBlock, NBasicBlock falseBlock, boolean returnFromMethod) {
         super(mnemonic);
         this.rX = rX;
         this.rY = rY;
-        this.N = N;
+        this.trueBlock = trueBlock;
+        this.falseBlock = falseBlock;
         this.returnFromMethod = returnFromMethod;
+        N = -1; // to be resolved later
     }
 
     /**
@@ -288,12 +316,12 @@ class NMarvinJump extends NMarvinInstruction {
      */
     public void write(PrintWriter out) {
         String comment;
-        if (mnemonic.equals("jumpn")) {
-            comment = "jump to " + N;
-            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, N, "", "", comment);
-        } else if (mnemonic.equals("jumpr")) {
+        if (mnemonic.equals("jumpr")) {
             comment = "jump to " + rX;
             out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, "", "", comment);
+        } else if (mnemonic.equals("jumpn")) {
+            comment = "jump to " + N;
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, N, "", "", comment);
         } else {
             comment = "if " + rX + " " + mnemonic2Op.get(mnemonic) + " " + rY + " jump to " + N;
             out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, N, comment);
@@ -316,23 +344,9 @@ class NMarvinLoad extends NMarvinInstruction {
     public NPhysicalRegister rY;
 
     /**
-     * Offset (from base memory address) of the value to load.
+     * Offset (from base memory address) of the value to load (-1 if irrelevant, ie, if mnemonic is popr).
      */
     public int N;
-
-    /**
-     * Constructs an NMarvinLoad object.
-     *
-     * @param mnemonic instruction mnemonic.
-     * @param rX       where to load.
-     * @param rY       Base memory address.
-     */
-    public NMarvinLoad(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY) {
-        super(mnemonic);
-        this.rX = rX;
-        this.rY = rY;
-        this.N = -1;
-    }
 
     /**
      * Constructs an NMarvinLoad object.
@@ -356,11 +370,12 @@ class NMarvinLoad extends NMarvinInstruction {
         String comment;
         if (mnemonic.equals("loadn")) {
             comment = rX + " = mem[" + rY + " + " + N + "]";
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, N, comment);
         } else {
             // Must be "popr".
             comment = rX + " = mem[--" + rY + "]";
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, "", comment);
         }
-        out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, "", comment);
     }
 }
 
@@ -407,23 +422,9 @@ class NMarvinStore extends NMarvinInstruction {
     public NPhysicalRegister rY;
 
     /**
-     * Offset (from base memory address) where the value will be stored.
+     * Offset (from base memory address) where the value will be stored (-1 if irrelevant, ie, if mnemonic is pushr).
      */
     public int N;
-
-    /**
-     * Constructs an NMarvinStore object.
-     *
-     * @param mnemonic instruction mnemonic.
-     * @param rX       what to store.
-     * @param rY       base memory address.
-     */
-    public NMarvinStore(String mnemonic, NPhysicalRegister rX, NPhysicalRegister rY) {
-        super(mnemonic);
-        this.rX = rX;
-        this.rY = rY;
-        this.N = -1;
-    }
 
     /**
      * Constructs an NMarvinStore object.
@@ -447,11 +448,12 @@ class NMarvinStore extends NMarvinInstruction {
         String comment;
         if (mnemonic.equals("storen")) {
             comment = "mem[" + rY + " + " + N + "]" + " = " + rX;
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, N, comment);
         } else {
             // Must be "pushr".
             comment = "mem[" + rY + "++]" + " = " + rX;
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, "", comment);
         }
-        out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", pc, mnemonic, rX, rY, "", comment);
     }
 }
 

@@ -1,6 +1,5 @@
 package iota;
 
-
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -110,13 +109,13 @@ class NBasicBlock {
     public NBasicBlock(NControlFlowGraph cfg, int id) {
         this.cfg = cfg;
         this.id = id;
-        tuples = new ArrayList<>();
         isVisited = false;
         isActive = false;
-        predecessors = new ArrayList<>();
-        successors = new ArrayList<>();
         isLoopHead = false;
         isLoopTail = false;
+        tuples = new ArrayList<>();
+        predecessors = new ArrayList<>();
+        successors = new ArrayList<>();
         hir = new ArrayList<>();
         lir = new ArrayList<>();
         marvin = new ArrayList<>();
@@ -202,6 +201,11 @@ class NBasicBlock {
         p.println();
     }
 
+    /**
+     * Writes the liveness sets in this block to standard output.
+     *
+     * @param p for pretty printing with indentation.
+     */
     public void writeLivenessSetsToStdOut(PrettyPrinter p) {
         p.printf("%s:\n", id());
         String s = "";
@@ -235,33 +239,54 @@ class NBasicBlock {
  * Representation of a control flow graph (cfg) for a method.
  */
 class NControlFlowGraph {
-    // Constant pool for the class containing the method.
-    private CLConstantPool cp;
+    /**
+     * Constant pool of the class containing the method.
+     */
+    public CLConstantPool cp;
 
-    // Contains information about the method.
-    private CLMethodInfo m;
+    /**
+     * Contains information about the method.
+     */
+    public CLMethodInfo m;
 
-    // Name of the method this cfg corresponds to.
+    /**
+     * Name of the method.
+     */
     public String name;
 
-    // Descriptor of the method this cfg corresponds to.
-    public String descriptor;
+    /**
+     * Descriptor of the method.
+     */
+    public String desc;
 
-    // List of basic blocks forming the cfg for the method.
+    /**
+     * List of basic blocks forming this cfg.
+     */
     public ArrayList<NBasicBlock> basicBlocks;
 
-    // Maps the pc of a JVM instruction to the block it is in.
+    /**
+     * Maps the pc of a JVM instruction to the block it is in.
+     */
     private HashMap<Integer, NBasicBlock> pcToBasicBlock;
 
+    /**
+     * Number of local variables (including parameters) in the method.
+     */
     public int numLocals;
 
-    // HIR instruction identifier.
-    private static int hirId;
+    /**
+     * HIR instruction identifier.
+     */
+    public static int hirId;
 
-    // Maps HIR instruction ids in this cfg to HIR instructions.
+    /**
+     * Maps HIR instruction ids in this cfg to HIR instructions.
+     */
     public HashMap<Integer, NHirInstruction> hirMap;
 
-    // LIR instruction identifier.
+    /**
+     * LIR instruction identifier.
+     */
     public static int lirId;
 
     /**
@@ -287,14 +312,16 @@ class NControlFlowGraph {
     /**
      * Constructs a ControlFlowGraph object for a method.
      *
-     * @param cp constant pool of the class containing the method.
-     * @param m  contains information about the method.
+     * @param cp   constant pool of the class containing the method.
+     * @param m    contains information about the method.
+     * @param name method name.
+     * @param desc method descriptor.
      */
-    public NControlFlowGraph(CLConstantPool cp, CLMethodInfo m, String name, String descriptor) {
+    public NControlFlowGraph(CLConstantPool cp, CLMethodInfo m, String name, String desc) {
         this.cp = cp;
         this.m = m;
         this.name = name;
-        this.descriptor = descriptor;
+        this.desc = desc;
 
         hirId = 0;
         hirMap = new HashMap<Integer, NHirInstruction>();
@@ -366,8 +393,8 @@ class NControlFlowGraph {
         if (!block.isVisited) {
             block.isVisited = true;
             block.isActive = true;
-            for (NBasicBlock successor : block.successors) {
-                detectLoops(successor, block);
+            for (NBasicBlock succ : block.successors) {
+                detectLoops(succ, block);
             }
             block.isActive = false;
         } else if (block.isActive) {
@@ -407,20 +434,20 @@ class NControlFlowGraph {
     public void tuplesToHir() {
         numLocals = numLocals();
         NHirInstruction[] locals = new NHirInstruction[numLocals];
-        ArrayList<String> argTypes = argumentTypes(descriptor);
+        ArrayList<String> argTypes = argumentTypes(desc);
 
         // The source block B0 and its state vector.
-        NBasicBlock beginBlock = basicBlocks.get(0);
+        NBasicBlock source = basicBlocks.get(0);
         for (int i = 0; i < locals.length; i++) {
             NHirInstruction ins;
             if (i < argTypes.size()) {
-                ins = new NHirLoadParam(beginBlock, hirId++, i);
-                beginBlock.hir.add(ins);
+                ins = new NHirLoadParam(source, hirId++, i);
+                source.hir.add(ins);
                 hirMap.put(ins.id, ins);
                 locals[i] = ins;
             }
         }
-        beginBlock.locals = locals;
+        source.locals = locals;
 
         for (NBasicBlock block : basicBlocks) {
             block.isVisited = false;
@@ -430,8 +457,8 @@ class NControlFlowGraph {
         // HIR instructions.
         Stack<Integer> operandStack = new Stack<>();
         Queue<NBasicBlock> q = new LinkedList<>();
-        beginBlock.isVisited = true;
-        q.add(beginBlock);
+        source.isVisited = true;
+        q.add(source);
         while (!q.isEmpty()) {
             NBasicBlock block = q.remove();
             for (NBasicBlock succ : block.successors) {
@@ -453,7 +480,7 @@ class NControlFlowGraph {
             int index = -1;
             int lhs = -1, rhs = -1;
             NBasicBlock onTrueBlock, onFalseBlock;
-            NHirInstruction instruction = null;
+            NHirInstruction instruction;
             for (NTuple tuple : block.tuples) {
                 switch (tuple.opcode) {
                     case ICONST_0:
@@ -519,7 +546,7 @@ class NControlFlowGraph {
                         rhs = zero.id;
                         branchTuple = ((NBranchTuple) tuple);
                         onTrueBlock = pcToBasicBlock.get((int) branchTuple.location);
-                        onFalseBlock = pcToBasicBlock.get((int) (branchTuple.pc + 3));
+                        onFalseBlock = pcToBasicBlock.get(branchTuple.pc + 3);
                         instruction = new NHirJump(block, hirId++, tuple.opcode == IFEQ ? IF_ICMPEQ : IF_ICMPNE,
                                 lhs, rhs, onTrueBlock, onFalseBlock);
                         hirMap.put(zero.id, zero);
@@ -545,15 +572,21 @@ class NControlFlowGraph {
                     case INVOKESTATIC:
                         NInvokestaticTuple methodCall = ((NInvokestaticTuple) tuple);
                         ArrayList<Integer> args = new ArrayList<>();
-                        int numArgs = argumentCount(methodCall.descriptor);
+                        String mName = methodCall.name;
+                        String mDesc = methodCall.desc;
+
+                        // Booleans are implicitly integers (1 for true and 0 for false).
+                        mDesc = mDesc.replace("Z", "I");
+
+                        int numArgs = argumentCount(mDesc);
                         for (int i = 0; i < numArgs; i++) {
                             int arg = operandStack.pop();
                             args.add(0, arg);
                         }
-                        String returnType = returnType(methodCall.descriptor);
-                        boolean isIOMethod = methodCall.name.equals("read") && methodCall.descriptor.equals("()I") ||
-                                methodCall.name.equals("write") && methodCall.descriptor.equals("(I)V");
-                        instruction = new NHirCall(block, hirId++, methodCall.name, args, returnType, isIOMethod);
+                        String returnType = returnType(mDesc);
+                        boolean isIOMethod = mName.equals("read") && mDesc.equals("()I") ||
+                                mName.equals("write") && mDesc.equals("(I)V");
+                        instruction = new NHirCall(block, hirId++, mName, mDesc, args, returnType, isIOMethod);
                         if (!returnType.equals("V")) {
                             operandStack.push(instruction.id);
                         }
@@ -576,25 +609,28 @@ class NControlFlowGraph {
     }
 
     /**
-     * Converts the hir instructions in this cfg to lir instructions.
+     * Converts the HIR instructions in this cfg to LIR instructions.
      */
     public void hirToLir() {
         lirId = 0;
         regId = 16;
         registers = new ArrayList<>();
         pRegisters = new ArrayList<>();
+
+        // The first sixteen slots in registers are for physical registers R0 -- R15.
         for (int i = 0; i < 16; i++) {
             registers.add(null);
         }
+
         for (NBasicBlock block : basicBlocks) {
-            for (NHirInstruction instruction : block.hir) {
-                instruction.toLir();
+            for (NHirInstruction ins : block.hir) {
+                ins.toLir();
             }
         }
     }
 
     /**
-     *
+     * Replaces redundant phi functions of the form x = phi(y, x, x, ..., x) with y.
      */
     public void cleanupPhiFunctions() {
         for (int ins : hirMap.keySet()) {
@@ -602,12 +638,14 @@ class NControlFlowGraph {
             if (hir instanceof NHirPhiFunction) {
                 NHirPhiFunction phi = (NHirPhiFunction) hir;
                 int index = phi.index;
+
+                // Resolve any "?" in phi.args.
                 for (int i = 0; i < phi.args.size(); i++) {
-                    NHirInstruction arg = phi.args.get(i);
                     NBasicBlock pred = phi.block.predecessors.get(i);
                     phi.args.set(i, pred.locals[index]);
                 }
 
+                // Check if this phi function is redundant ...
                 boolean redundant = true;
                 if (phi.block.isLoopHead) {
                     if (phi.id != phi.args.get(1).id) {
@@ -616,11 +654,13 @@ class NControlFlowGraph {
                 } else {
                     NHirInstruction firstArg = phi.args.get(0);
                     for (int i = 1; i < phi.args.size(); i++) {
-                        if (phi.args.get(i).id != firstArg.id) {
+                        if (phi.args.get(i) != null && phi.args.get(i).id != firstArg.id) {
                             redundant = false;
                         }
                     }
                 }
+
+                // and remove it if it is so.
                 if (redundant) {
                     phi.block.hir.remove(phi);
                     hirMap.put(phi.id, phi.args.get(0));
@@ -630,13 +670,15 @@ class NControlFlowGraph {
     }
 
     /**
-     *
+     * Resolve Phi functions by inserting appropriate "copy" instructions at the end of the predecessor blocks. If
+     * the last instruction in the predecessor is a jump instruction, then the "copy" instructions are inserted right
+     * before the jump instruction.
      */
     public void resolvePhiFunctions() {
-        for (int ins1 : hirMap.keySet()) {
-            NHirInstruction hir = hirMap.get(ins1);
-            if (hir instanceof NHirPhiFunction) {
-                NHirPhiFunction phi = (NHirPhiFunction) hir;
+        for (int insId : hirMap.keySet()) {
+            NHirInstruction ins = hirMap.get(insId);
+            if (ins instanceof NHirPhiFunction) {
+                NHirPhiFunction phi = (NHirPhiFunction) ins;
                 NBasicBlock block = phi.block;
                 for (int i = 0; i < phi.args.size(); i++) {
                     if (phi.args.get(i) == null) {
@@ -644,7 +686,7 @@ class NControlFlowGraph {
                     }
                     NHirInstruction arg = hirMap.get(phi.args.get(i).id);
                     NBasicBlock targetBlock = block.predecessors.get(i);
-                    NLirCopy copy = new NLirCopy(arg.block, lirId++, phi.lir.write, arg.lir.write);
+                    NLirCopy copy = new NLirCopy(targetBlock, lirId++, phi.lir.write, arg.lir.write);
                     NHirInstruction targetIns = hirMap.get(targetBlock.hir.get(targetBlock.hir.size() - 1).id);
                     if (targetIns instanceof NHirJump) {
                         targetBlock.lir.add(targetBlock.lir.size() - 1, copy);
@@ -663,18 +705,15 @@ class NControlFlowGraph {
     public void renumberLir() {
         int nextId = 0;
         for (NBasicBlock block : basicBlocks) {
-            ArrayList<NLirInstruction> newLir = new ArrayList<>();
-            for (NLirInstruction lir : block.lir) {
-                lir.id = nextId;
+            for (NLirInstruction ins : block.lir) {
+                ins.id = nextId;
                 nextId += 5;
-                newLir.add(lir);
             }
-            block.lir = newLir;
         }
     }
 
     /**
-     *
+     * Converts the LIR instructions in this cfg to Marvin instructions.
      */
     public void lirToMarvin() {
         for (NBasicBlock block : basicBlocks) {
@@ -685,43 +724,98 @@ class NControlFlowGraph {
     }
 
     /**
-     *
+     * Generate Marvin code for creating a stack frame upon method entry and destroying the frame upon exit.
      */
     public void prepareMethodEntryAndExit() {
+        // Upon method entry ...
         NBasicBlock entry = basicBlocks.get(0);
-        NMarvinInstruction instruction = new NMarvinStore("pushr", regInfo[RA], regInfo[SP]);
+
+        // ... save RA, ...
+        NMarvinInstruction ins = new NMarvinStore("pushr", regInfo[RA], regInfo[SP], -1);
         int i = 0;
-        entry.marvin.add(i++, instruction);
-        instruction = new NMarvinStore("pushr", regInfo[FP], regInfo[SP]);
-        entry.marvin.add(i++, instruction);
-        instruction = new NMarvinCopy(regInfo[FP], regInfo[SP]);
-        entry.marvin.add(i++, instruction);
+        entry.marvin.add(i++, ins);
+
+        // ... save FP, ...
+        ins = new NMarvinStore("pushr", regInfo[FP], regInfo[SP], -1);
+        entry.marvin.add(i++, ins);
+        ins = new NMarvinCopy(regInfo[FP], regInfo[SP]); // set FP to current SP
+        entry.marvin.add(i++, ins);
+
+        // ... and save registers used by this method.
         for (int j = 0; j < pRegisters.size(); j++) {
-            NPhysicalRegister pRegister = pRegisters.get(j);
-            instruction = new NMarvinStore("pushr", pRegister, regInfo[SP]);
-            entry.marvin.add(i++, instruction);
+            NPhysicalRegister pReg = pRegisters.get(j);
+            ins = new NMarvinStore("pushr", pReg, regInfo[SP], -1);
+            entry.marvin.add(i++, ins);
         }
 
+        // Upon method exit ...
         NBasicBlock exit = new NBasicBlock(this, basicBlocks.size());
+
+        // ... restore the values of registers used by this method, ...
         for (int j = pRegisters.size() - 1; j >= 0; j--) {
-            NPhysicalRegister pRegister = pRegisters.get(j);
-            instruction = new NMarvinLoad("popr", pRegister, regInfo[SP]);
-            exit.marvin.add(instruction);
+            NPhysicalRegister pReg = pRegisters.get(j);
+            ins = new NMarvinLoad("popr", pReg, regInfo[SP], -1);
+            exit.marvin.add(ins);
         }
-        instruction = new NMarvinLoad("popr", regInfo[FP], regInfo[SP]);
-        exit.marvin.add(instruction);
-        instruction = new NMarvinLoad("popr", regInfo[RA], regInfo[SP]);
-        exit.marvin.add(instruction);
-        instruction = new NMarvinJump("jumpr", regInfo[RA], null, 0, false);
-        exit.marvin.add(instruction);
+
+        // ... restore FP, ...
+        ins = new NMarvinLoad("popr", regInfo[FP], regInfo[SP], -1);
+        exit.marvin.add(ins);
+
+        // ... restore RA, ...
+        ins = new NMarvinLoad("popr", regInfo[RA], regInfo[SP], -1);
+        exit.marvin.add(ins);
+
+        // and jump to RA (ie, the caller).
+        ins = new NMarvinJump("jumpr", regInfo[RA], null, null, null, false);
+        exit.marvin.add(ins);
+
         basicBlocks.add(exit);
     }
 
     /**
-     *
+     * Resolve jumps within this method. This does not include method calls, which are handled by the resolveCalls()
+     * method.
      */
-    public void resolveJumps(HashMap<String, Integer> methodAddresses) {
+    public void resolveJumps() {
+        // Assign a running program counter (pc) value to the Marvin instructions.
+        for (NBasicBlock block : basicBlocks) {
+            for (NMarvinInstruction ins : block.marvin) {
+                ins.pc = NEmitter.pc++;
+            }
+        }
 
+        // Save the method name/descriptor along with the address where it is defined.
+        NEmitter.methodAddresses.put(name + desc, basicBlocks.get(0).marvin.get(0).pc);
+
+        // Resolve jumps.
+        NBasicBlock exitBlock = basicBlocks.get(basicBlocks.size() - 1);
+        for (NBasicBlock block : basicBlocks) {
+            for (NMarvinInstruction ins : block.marvin) {
+                if (ins instanceof NMarvinJump) {
+                    NMarvinJump jump = (NMarvinJump) ins;
+                    if (jump.mnemonic.equals("jumpn")) {
+                        jump.N = jump.returnFromMethod ? exitBlock.marvin.get(0).pc : jump.trueBlock.marvin.get(0).pc;
+                    } else if (!jump.mnemonic.equals("jumpr")) {
+                        jump.N = jump.trueBlock.marvin.get(0).pc;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Resolves the jump locations in the "calln" instructions.
+     */
+    public void resolveCalls() {
+        for (NBasicBlock block : basicBlocks) {
+            for (NMarvinInstruction ins : block.marvin) {
+                if (ins instanceof NMarvinCall) {
+                    NMarvinCall call = (NMarvinCall) ins;
+                    call.N = NEmitter.methodAddresses.get(call.name + call.desc);
+                }
+            }
+        }
     }
 
     /**
@@ -827,9 +921,9 @@ class NControlFlowGraph {
         p.printf("[[ Liveness Intervals ]]\n\n");
         for (NInterval interval : intervals) {
             if (!interval.ranges.isEmpty()) {
-                String id = "" + interval.registerId;
-                if (registers.get(interval.registerId) instanceof NVirtualRegister) {
-                    NVirtualRegister reg = (NVirtualRegister) registers.get(interval.registerId);
+                String id = "" + interval.regId;
+                if (registers.get(interval.regId) instanceof NVirtualRegister) {
+                    NVirtualRegister reg = (NVirtualRegister) registers.get(interval.regId);
                     if (reg.spill) {
                         p.printf("v%s: %s -> %s:%s \n", id, interval, reg.pReg, reg.offset);
                     } else {
@@ -844,15 +938,20 @@ class NControlFlowGraph {
     }
 
     /**
-     * @param out
+     * Writes the Marvin instructions in this cfg to the give output stream.
+     *
+     * @param out output stream.
      */
     public void write(PrintWriter out) {
-        out.printf("# %s%s\n", name, descriptor);
-        for (NBasicBlock block : basicBlocks) {
-            out.println();
+        out.printf("# %s%s\n\n", name, desc);
+        for (int i = 0; i < basicBlocks.size(); i++) {
+            NBasicBlock block = basicBlocks.get(i);
+            String blockName = block.id() + (i == 0 ? " (entry)" : (i == basicBlocks.size() - 1 ? " (exit)" : ""));
+            out.printf("# %s\n", blockName);
             for (NMarvinInstruction ins : block.marvin) {
                 ins.write(out);
             }
+            out.println();
         }
         out.println();
     }
@@ -921,8 +1020,9 @@ class NControlFlowGraph {
                     CLConstantNameAndTypeInfo nameAndTypeInfo =
                             (CLConstantNameAndTypeInfo) cp.cpItem(memberRefInfo.nameAndTypeIndex);
                     String name = new String(((CLConstantUtf8Info) cp.cpItem(nameAndTypeInfo.nameIndex)).b);
-                    String descriptor = new String(((CLConstantUtf8Info) cp.cpItem(nameAndTypeInfo.descriptorIndex)).b);
-                    tuples.add(new NInvokestaticTuple(pc, name, descriptor));
+                    String desc = new String(((CLConstantUtf8Info) cp.cpItem(nameAndTypeInfo.descriptorIndex)).b);
+                    desc = desc.replace("Z", "I");
+                    tuples.add(new NInvokestaticTuple(pc, name, desc));
                     break;
             }
         }
@@ -949,7 +1049,8 @@ class NControlFlowGraph {
 
     // Builds a list of basic blocks for this cfg from the given list of tuples and returns that list. In the process,
     // populates pcToBasicBlock, which maps leader tuple's pc to the basic block the tuple belongs to.
-    private ArrayList<NBasicBlock> buildBasicBlocks(ArrayList<NTuple> tuples, HashMap<Integer, NBasicBlock> pcToBasicBlock) {
+    private ArrayList<NBasicBlock> buildBasicBlocks(ArrayList<NTuple> tuples,
+                                                    HashMap<Integer, NBasicBlock> pcToBasicBlock) {
         ArrayList<NBasicBlock> basicBlocks = new ArrayList<>();
         int blockId = 0;
         NBasicBlock block = new NBasicBlock(this, blockId++);
@@ -967,7 +1068,7 @@ class NControlFlowGraph {
         return basicBlocks;
     }
 
-    // Returns the number of local variables in the method denoted by this cfg.
+    // Returns the number of local variables (including formal parameters) in the method denoted by this cfg.
     private int numLocals() {
         for (CLAttributeInfo info : m.attributes) {
             if (info instanceof CLCodeAttribute) {
@@ -995,33 +1096,38 @@ class NControlFlowGraph {
     }
 
     // Returns the number of formal parameters for a method with the given descriptor.
-    private int argumentCount(String descriptor) {
-        return descriptor.substring(1, descriptor.lastIndexOf(")")).length();
+    private int argumentCount(String desc) {
+        return desc.substring(1, desc.lastIndexOf(")")).length();
     }
 
     // Returns a list containing the argument types of a method with the given descriptor.
-    private ArrayList<String> argumentTypes(String descriptor) {
+    private ArrayList<String> argumentTypes(String desc) {
         ArrayList<String> args = new ArrayList<String>();
-        String arguments = descriptor.substring(1, descriptor.length() - 2);
+        String arguments = desc.substring(1, desc.length() - 2);
         for (int i = 0; i < arguments.length(); i++) {
             args.add(arguments.charAt(0) + "");
         }
         return args;
     }
 
+    // Returns the return type of a method with the given descriptor, or "V" (for void).
+    private String returnType(String desc) {
+        return desc.substring(desc.lastIndexOf(")") + 1);
+    }
+
     // Computes the local liveness sets (ie, liveUse and liveDef) for this cfg.
     private void computeLocalLivenessSets() {
-        for (NBasicBlock b : basicBlocks) {
-            b.liveUse = new BitSet(registers.size());
-            b.liveDef = new BitSet(registers.size());
-            for (NLirInstruction lir : b.lir) {
+        for (NBasicBlock block : basicBlocks) {
+            block.liveUse = new BitSet(registers.size());
+            block.liveDef = new BitSet(registers.size());
+            for (NLirInstruction lir : block.lir) {
                 for (NRegister reg : lir.reads) {
-                    if (!b.liveDef.get(reg.number)) {
-                        b.liveUse.set(reg.number);
+                    if (!block.liveDef.get(reg.number)) {
+                        block.liveUse.set(reg.number);
                     }
                 }
                 if (lir.write != null) {
-                    b.liveDef.set(lir.write.number);
+                    block.liveDef.set(lir.write.number);
                 }
             }
         }
@@ -1029,32 +1135,27 @@ class NControlFlowGraph {
 
     // Computes the global liveness sets (ie, liveIn and liveOut) for this cfg.
     private void computeGlobalLivenessSets() {
-        for (NBasicBlock b : basicBlocks) {
-            b.liveIn = new BitSet(registers.size());
-            b.liveOut = new BitSet(registers.size());
+        for (NBasicBlock block : basicBlocks) {
+            block.liveIn = new BitSet(registers.size());
+            block.liveOut = new BitSet(registers.size());
         }
         boolean changed;
         do {
             changed = false;
             for (int i = basicBlocks.size() - 1; i >= 0; i--) {
-                NBasicBlock b = basicBlocks.get(i);
+                NBasicBlock block = basicBlocks.get(i);
                 BitSet newLiveOut = new BitSet(registers.size());
-                for (NBasicBlock s : b.successors) {
+                for (NBasicBlock s : block.successors) {
                     newLiveOut.or(s.liveIn);
                 }
-                if (!b.liveOut.equals(newLiveOut)) {
-                    b.liveOut = newLiveOut;
+                if (!block.liveOut.equals(newLiveOut)) {
+                    block.liveOut = newLiveOut;
                     changed = true;
                 }
-                b.liveIn = (BitSet) b.liveOut.clone();
-                b.liveIn.andNot(b.liveDef);
-                b.liveIn.or(b.liveUse);
+                block.liveIn = (BitSet) block.liveOut.clone();
+                block.liveIn.andNot(block.liveDef);
+                block.liveIn.or(block.liveUse);
             }
         } while (changed);
-    }
-
-    // Returns the return type of a method with the given descriptor, or "V" (for void).
-    private String returnType(String descriptor) {
-        return descriptor.substring(descriptor.lastIndexOf(")") + 1);
     }
 }

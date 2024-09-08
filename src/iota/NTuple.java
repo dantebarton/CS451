@@ -7,17 +7,17 @@ import static iota.CLConstants.*;
  */
 abstract class NTuple {
     /**
-     * Program counter of the instruction.
+     * Program counter of the tuple.
      */
     public int pc;
 
     /**
-     * Opcode of the instruction.
+     * Tuple opcode.
      */
     public int opcode;
 
     /**
-     * Mnemonic of the instruction.
+     * Tuple mnemonic.
      */
     public String mnemonic;
 
@@ -29,8 +29,8 @@ abstract class NTuple {
     /**
      * Constructs an NTuple object.
      *
-     * @param pc     program counter of the instruction.
-     * @param opcode opcode of the instruction.
+     * @param pc     program counter of the tuple.
+     * @param opcode tuple opcode.
      */
     protected NTuple(int pc, int opcode) {
         this.pc = pc;
@@ -59,8 +59,8 @@ class NBranchTuple extends NTuple {
     /**
      * Constructs an NBranchTuple object.
      *
-     * @param pc       program counter of the instruction.
-     * @param opcode   opcode of the instruction.
+     * @param pc       program counter of the tuple.
+     * @param opcode   tuple opcode.
      * @param location branch location.
      */
     public NBranchTuple(int pc, int opcode, short location) {
@@ -88,7 +88,7 @@ class NIConstTuple extends NTuple {
     /**
      * Constructs an NIConstTuple object.
      *
-     * @param pc program counter of the instruction.
+     * @param pc program counter of the tuple.
      * @param N  the integer constant.
      */
     public NIConstTuple(int pc, int N) {
@@ -109,33 +109,33 @@ class NIConstTuple extends NTuple {
  */
 class NInvokestaticTuple extends NTuple {
     /**
-     * Name of the method.
+     * Method name.
      */
     public String name;
 
     /**
-     * Descriptor of the method.
+     * Method descriptor.
      */
-    public String descriptor;
+    public String desc;
 
     /**
      * Constructs an NInvokestaticTuple object.
      *
-     * @param pc         program counter of the instruction.
-     * @param name       name of the method.
-     * @param descriptor descriptor of the method.
+     * @param pc   program counter of the tuple.
+     * @param name method name.
+     * @param desc method descriptor.
      */
-    public NInvokestaticTuple(int pc, String name, String descriptor) {
+    public NInvokestaticTuple(int pc, String name, String desc) {
         super(pc, INVOKESTATIC);
         this.name = name;
-        this.descriptor = descriptor;
+        this.desc = desc;
     }
 
     /**
      * {@inheritDoc}
      */
     public void writeToStdOut(PrettyPrinter p) {
-        p.printf("%s: %s %s%s\n", pc, mnemonic, name, descriptor);
+        p.printf("%s: %s %s%s\n", pc, mnemonic, name, desc);
     }
 }
 
@@ -151,8 +151,8 @@ class NLoadStoreTuple extends NTuple {
     /**
      * Constructs an NLoadStoreTuple object.
      *
-     * @param pc     program counter of the instruction.
-     * @param opcode opcode of the instruction.
+     * @param pc     program counter of the tuple.
+     * @param opcode tuple opcode.
      * @param index  variable index.
      */
     public NLoadStoreTuple(int pc, int opcode, byte index) {
@@ -175,8 +175,8 @@ class NNoArgTuple extends NTuple {
     /**
      * Constructs an NNoArgTuple object.
      *
-     * @param pc     program counter of the instruction.
-     * @param opcode opcode of the instruction.
+     * @param pc     program counter of the tuple.
+     * @param opcode tuple opcode.
      */
     public NNoArgTuple(int pc, int opcode) {
         super(pc, opcode);

@@ -84,7 +84,7 @@ abstract class NHirInstruction {
     public String type;
 
     /**
-     * The corresponding LIR instruction.
+     * The last of the corresponding LIR instructions.
      */
     public NLirInstruction lir;
 
@@ -197,9 +197,14 @@ class NHirArithmetic extends NHirInstruction {
  */
 class NHirCall extends NHirInstruction {
     /**
-     * Name of the method.
+     * Method name.
      */
     public String name;
+
+    /**
+     * Method descriptor.
+     */
+    public String descriptor;
 
     /**
      * Arguments to the method.
@@ -216,14 +221,17 @@ class NHirCall extends NHirInstruction {
      *
      * @param block      enclosing basic block.
      * @param id         instruction id.
-     * @param name       name of the method.
-     * @param args       arguments to the method.
+     * @param name       method name.
+     * @param descriptor method descriptor.
+     * @param args       method arguments.
      * @param type       return type.
      * @param isIOMethod whether this method is an input (read()I) or output (write(I)V) method.
      */
-    public NHirCall(NBasicBlock block, int id, String name, ArrayList<Integer> args, String type, boolean isIOMethod) {
+    public NHirCall(NBasicBlock block, int id, String name, String descriptor, ArrayList<Integer> args, String type,
+                    boolean isIOMethod) {
         super(block, id, jvm2Hir.get(INVOKESTATIC), type);
         this.name = name;
+        this.descriptor = descriptor;
         this.args = args;
         this.isIOMethod = isIOMethod;
     }
@@ -249,12 +257,14 @@ class NHirCall extends NHirInstruction {
             // Arguments are passed by storing them in memory.
             for (int i = args.size() - 1; i >= 0; i--) {
                 NLirInstruction argIns = block.cfg.hirMap.get(args.get(i)).toLir();
-                NLirPush arg = new NLirPush(block, NControlFlowGraph.lirId++, argIns.write, regInfo[SP]);
-                block.lir.add(arg);
+                lir = new NLirStore(block, NControlFlowGraph.lirId++, "push", argIns.write, regInfo[SP], -1);
+                block.lir.add(lir);
             }
 
-            NLirCall call = new NLirCall(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic));
-            block.lir.add(call);
+            // The method call.
+            lir = new NLirCall(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), name, descriptor,
+                    !type.equals("V") ? regInfo[RV] : null);
+            block.lir.add(lir);
 
             // Pop the stack frame that was set up for and by the method call.
             lir = new NLirInc(block, NControlFlowGraph.lirId++, regInfo[SP], -args.size());
@@ -262,9 +272,9 @@ class NHirCall extends NHirInstruction {
 
             // Return value from the method is stored in RV. We copy it into a virtual register that we create
             // for the return value.
-            if (lir.write != null) {
-                NVirtualRegister to = new NVirtualRegister(NControlFlowGraph.regId++);
-                lir = new NLirCopy(block, NControlFlowGraph.lirId++, to, regInfo[RV]);
+            if (!type.equals("V")) {
+                NVirtualRegister result = new NVirtualRegister(NControlFlowGraph.regId++);
+                lir = new NLirCopy(block, NControlFlowGraph.lirId++, result, regInfo[RV]);
                 block.lir.add(lir);
             }
         }
@@ -393,7 +403,8 @@ class NHirJump extends NHirInstruction {
         }
         if (falseBlock == null) {
             // Unconditional jump.
-            lir = new NLirJump(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), null, null, trueBlock, null, false);
+            lir = new NLirJump(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), null, null, trueBlock, null,
+                    false);
         } else {
             // Conditional jump.
             NLirInstruction lhsIns = block.cfg.hirMap.get(lhs).toLir();
@@ -448,7 +459,6 @@ class NHirLoadParam extends NHirInstruction {
         NVirtualRegister param = new NVirtualRegister(NControlFlowGraph.regId++);
         lir = new NLirLoad(block, NControlFlowGraph.lirId++, "load", param, regInfo[FP], -(index + 3));
         block.lir.add(lir);
-        block.cfg.registers.set(FP, regInfo[FP]);
         return lir;
     }
 
@@ -556,9 +566,8 @@ class NHirReturn extends NHirInstruction {
         }
         if (value != -1) {
             NLirInstruction result = block.cfg.hirMap.get(value).toLir();
-            NLirCopy rv = new NLirCopy(block, NControlFlowGraph.lirId++, regInfo[RV], result.write);
-            block.lir.add(rv);
-            block.cfg.registers.set(RV, regInfo[RV]);
+            lir = new NLirCopy(block, NControlFlowGraph.lirId++, regInfo[RV], result.write);
+            block.lir.add(lir);
         }
         lir = new NLirJump(block, NControlFlowGraph.lirId++, hir2lir.get(mnemonic), null, null, null, null, true);
         block.lir.add(lir);

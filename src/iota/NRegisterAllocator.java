@@ -44,29 +44,24 @@ abstract class NRegisterAllocator {
                 newLir.add(lir);
             }
             for (NLirInstruction lir : block.lir) {
-                //
+                // Store a spilled write operand in memory.
                 if (lir.write != null && lir.write instanceof NVirtualRegister) {
                     NVirtualRegister write = (NVirtualRegister) lir.write;
                     if (write.spill) {
-                        NLirStore store = new NLirStore(block, lir.id + 1, write.pReg, regInfo[SP], write.offset);
+                        NLirStore store = new NLirStore(block, lir.id + 1, "store", write.pReg, regInfo[SP],
+                                write.offset);
                         newLir.add(newLir.indexOf(lir) + 1, store);
                     }
                 }
 
-                // Ignore method calls.
-                if (lir instanceof NLirCall) {
-                    continue;
-                }
-
-                //
+                // Load a spilled read operand from memory.
                 for (int i = 0; i < lir.reads.size(); i++) {
                     NRegister reg = lir.reads.get(i);
                     if (reg instanceof NVirtualRegister) {
                         NVirtualRegister read = (NVirtualRegister) reg;
                         if (read.spill) {
                             NLirLoad load = new NLirLoad(block, lir.id - (lir.reads.size() - i), "load",
-                                    read.pReg, regInfo[SP],
-                                    read.offset);
+                                    read.pReg, regInfo[SP], read.offset);
                             newLir.add(newLir.indexOf(lir), load);
                         }
                     }

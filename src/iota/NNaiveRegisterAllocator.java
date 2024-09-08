@@ -26,9 +26,9 @@ class NNaiveRegisterAllocator extends NRegisterAllocator {
         LinkedList<NVirtualRegister> allocated = new LinkedList<>();
 
         for (NBasicBlock block : cfg.basicBlocks) {
-            for (NLirInstruction instruction : block.lir) {
-                if (instruction.write instanceof NVirtualRegister) {
-                    NVirtualRegister write = (NVirtualRegister) instruction.write;
+            for (NLirInstruction ins : block.lir) {
+                if (ins.write instanceof NVirtualRegister) {
+                    NVirtualRegister write = (NVirtualRegister) ins.write;
                     if (write.pReg == null) {
                         if (pRegId < NPhysicalRegister.MAX_COUNT) {
                             // Free register available, so allocate one to write.
@@ -52,17 +52,12 @@ class NNaiveRegisterAllocator extends NRegisterAllocator {
                     }
                 }
 
-                // Ignore method calls.
-                if (instruction instanceof NLirCall) {
-                    continue;
-                }
-
                 // If an instruction has two read operands, both, if different from one another, must not be allocated
                 // the same register.
-                if (instruction.reads.size() == 2 && instruction.reads.get(0) instanceof NVirtualRegister
-                        && instruction.reads.get(1) instanceof NVirtualRegister) {
-                    NVirtualRegister read1 = (NVirtualRegister) instruction.reads.get(0);
-                    NVirtualRegister read2 = (NVirtualRegister) instruction.reads.get(1);
+                if (ins.reads.size() == 2 && ins.reads.get(0) instanceof NVirtualRegister
+                        && ins.reads.get(1) instanceof NVirtualRegister) {
+                    NVirtualRegister read1 = (NVirtualRegister) ins.reads.get(0);
+                    NVirtualRegister read2 = (NVirtualRegister) ins.reads.get(1);
                     if (!read1.equals(read2) && read1.pReg.equals(read2.pReg)) {
                         read2.pReg = NPhysicalRegister.regInfo[(read2.pReg.number + 1) % NPhysicalRegister.MAX_COUNT];
                         if (!cfg.pRegisters.contains(read2.pReg)) {

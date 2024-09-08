@@ -23,27 +23,27 @@ enum UseType {
  */
 class NInterval {
     /**
-     * ID of the register (virtual or physical) that is attached to this interval.
+     * Id of the register (virtual or physical) that is attached to this interval.
      */
-    public int registerId;
+    public int regId;
 
     /**
-     * The sequence of ranges for this interval.
+     * The sequence of ranges in this interval.
      */
     public ArrayList<NRange> ranges;
 
     /**
-     * Maps LIR instruction ID to use type (READ or WRITE).
+     * Maps LIR instruction id to use type (READ or WRITE).
      */
     public HashMap<Integer, UseType> usePositions;
 
     /**
      * Constructs an NInterval object.
      *
-     * @param registerId ID of the register (virtual or physical) that is attached to this interval.
+     * @param regId id of the register (virtual or physical) that is attached to this interval.
      */
-    public NInterval(int registerId) {
-        this.registerId = registerId;
+    public NInterval(int regId) {
+        this.regId = regId;
         ranges = new ArrayList<>();
         usePositions = new HashMap<>();
     }
@@ -65,7 +65,7 @@ class NInterval {
      * then the first range's start value is set to that of the given range. Otherwise, the range is added as the new
      * first range of this interval.
      *
-     * @param range the range.
+     * @param range the range to add.
      */
     public void addRange(NRange range) {
         if (!ranges.isEmpty()) {
@@ -80,13 +80,13 @@ class NInterval {
     }
 
     /**
-     * Records whether the LIR instruction with the given ID reads or writes to the register bound to this interval.
+     * Records whether the LIR instruction with the given id reads or writes to the register bound to this interval.
      *
-     * @param lirID   LIR instruction ID.
+     * @param lirId   instruction id.
      * @param useType READ or WRITE.
      */
-    public void addUsePosition(int lirID, UseType useType) {
-        usePositions.put(lirID, useType);
+    public void addUsePosition(int lirId, UseType useType) {
+        usePositions.put(lirId, useType);
     }
 
     /**
@@ -96,9 +96,9 @@ class NInterval {
      * @return true if this interval intersects the other interval, and false otherwise.
      */
     public boolean intersects(NInterval other) {
-        for (NRange r : this.ranges) {
-            for (NRange s : other.ranges) {
-                if (r.intersects(s)) {
+        for (NRange thisRange : this.ranges) {
+            for (NRange otherRange : other.ranges) {
+                if (thisRange.intersects(otherRange)) {
                     return true;
                 }
             }

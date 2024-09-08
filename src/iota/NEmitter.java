@@ -24,9 +24,16 @@ public class NEmitter {
     // List of control flow graphs (one per method in the source program).
     private ArrayList<NControlFlowGraph> cfgs;
 
-    // Maps method identifier (ie, combination of its name and descriptor) to its address (ie, where the method is
-    // defined in the text segment of Marvin's main memory.
-    private HashMap<String, Integer> methodAddresses;
+    /**
+     * Maps method identifier (ie, combination of its name and descriptor) to its address (ie, where the method is
+     * defined in the text segment of Marvin's main memory.
+     */
+    public static HashMap<String, Integer> methodAddresses;
+
+    /**
+     * Program counter for Marvin instructions.
+     */
+    public static int pc;
 
     /**
      * Constructs an NEmitter object.
@@ -41,9 +48,13 @@ public class NEmitter {
         cfgs = new ArrayList<>();
         methodAddresses = new HashMap<>();
         CLConstantPool cp = clFile.constantPool;
+        pc = 2; // 0 and 1 are for emitting instructions to call the entry point method main()V and halt.
         for (CLMethodInfo mInfo : clFile.methods) {
             String name = new String(((CLConstantUtf8Info) cp.cpItem(mInfo.nameIndex)).b);
             String desc = new String(((CLConstantUtf8Info) cp.cpItem(mInfo.descriptorIndex)).b);
+
+            // Booleans are implicitly integers (1 for true and 0 for false).
+            desc = desc.replace("Z", "I");
 
             // We ignore these IO methods: read()I, write(I)V, and write(Z)V.
             if (name.equals("read") && desc.equals("()I") || name.equals("write") && desc.equals("(I)V") ||
@@ -85,14 +96,11 @@ public class NEmitter {
             }
             regAllocator.run();
 
-            // Handle spills (ie, generate load/store instructions where needed).
-            regAllocator.handleSpills();
-
             // If verbose output is requested, write the IRs (tuples, HIR, LIR), liveness sets, and liveness
             // intervals for the cfg to standard output.
             if (verbose) {
                 PrettyPrinter p = new PrettyPrinter();
-                p.printf(">>> %s%s\n\n", cfg.name, cfg.descriptor);
+                p.printf(">>> %s%s\n\n", cfg.name, cfg.desc);
                 cfg.writeTuplesToStdOut(p);
                 cfg.writeHirToStdOut(p);
                 cfg.writeLirToStdOut(p);
@@ -101,14 +109,18 @@ public class NEmitter {
                 p.println();
             }
 
-            //
+            // Handle spills (ie, generate load/store instructions where needed).
+            regAllocator.handleSpills();
+
+            // Convert LIR instructions to Marvin instructions.
             cfg.lirToMarvin();
 
-            //
+            // Generate Marvin code for creating a stack frame upon method entry and destroying the frame upon exit.
             cfg.prepareMethodEntryAndExit();
 
-            //
-            cfg.resolveJumps(methodAddresses);
+            // Resolve jumps within a method. This does not include method calls, which are handled within write() by
+            // calling cfg.resolveCalls().
+            cfg.resolveJumps();
 
             // Save the cfg in the list of cfgs.
             cfgs.add(cfg);
@@ -142,16 +154,16 @@ public class NEmitter {
         String outFile = destDir + File.separator + outFileName;
         try {
             PrintWriter out = new PrintWriter(new FileWriter(outFile));
-
-            // Get address of entry point method.
-            int N = 2; // methodAddresses.get("main()V"); TBD
-
             out.printf("# %s (last modified: %s)\n\n", outFileName, new Date());
-            out.printf("# Call entry point method main()V\n");
-            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", 0, "calln", "r12", N, "", "call @" + N);
+
+            // Emit instructions to jump to entry point method main()V and halt.
+            int N = methodAddresses.get("main()V");
+            out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n", 0, "calln", "r12", N, "", "call method @" + N);
             out.printf("%-6s%-8s%-8s%-8s%-8s# %s\n\n", 1, "halt", "", "", "", "halt the machine");
 
+            // Emit instructions for each method.
             for (NControlFlowGraph cfg : cfgs) {
+                cfg.resolveCalls();
                 cfg.write(out);
             }
 
