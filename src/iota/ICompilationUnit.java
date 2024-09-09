@@ -183,7 +183,7 @@ class ICompilationUnit extends IAST {
     //   4. Implicit IO method, public static void write(boolean)
     private void initializeInducedType(CLEmitter output) {
         String name = fileName.replace(".iota", "");
-        String[] tokens = name.split(File.separator);
+        String[] tokens = name.split("[\\\\|/]");
         output.addClass(mods, tokens[tokens.length - 1], "java/lang/Object", null, false);
         ArrayList<String> mods2 = new ArrayList<>();
         mods2.add("public");

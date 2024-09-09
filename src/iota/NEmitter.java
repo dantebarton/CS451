@@ -44,7 +44,7 @@ public class NEmitter {
      * @param verbose    whether to produce verbose output or not.
      */
     public NEmitter(String sourceFile, CLFile clFile, String ra, boolean verbose) {
-        this.sourceFile = sourceFile.substring(sourceFile.lastIndexOf(File.separator) + 1);
+        this.sourceFile = sourceFile;
         cfgs = new ArrayList<>();
         methodAddresses = new HashMap<>();
         CLConstantPool cp = clFile.constantPool;
@@ -150,7 +150,9 @@ public class NEmitter {
      * destinationDir() method.
      */
     public void write() {
-        String outFileName = sourceFile.replace(".iota", ".marv");
+        String s = sourceFile.replace(".iota", ".marv");
+        String[] tokens = s.split("[\\\\|/]");
+        String outFileName = tokens[tokens.length - 1];
         String outFile = destDir + File.separator + outFileName;
         try {
             PrintWriter out = new PrintWriter(new FileWriter(outFile));
