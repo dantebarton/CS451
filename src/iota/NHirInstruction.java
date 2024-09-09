@@ -480,7 +480,7 @@ class NHirPhiFunction extends NHirInstruction {
     public ArrayList<NHirInstruction> args;
 
     /**
-     * Index of the variable to which the function is bound.
+     * Index of the variable to which the function is bound (-1 if there is no variable associated with the function).
      */
     public int index;
 

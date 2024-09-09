@@ -599,7 +599,20 @@ class NControlFlowGraph {
                         block.hir.add(instruction);
                         break;
                     case IRETURN:
-                        instruction = new NHirReturn(block, hirId++, operandStack.pop());
+                        if (operandStack.size() > 1) {
+                            // Return value could be one of several values, so we need a phi function to capture the
+                            // possibilities.
+                            ArrayList<NHirInstruction> phiArgs = new ArrayList<>();
+                            while (!operandStack.isEmpty()) {
+                                phiArgs.add(0, hirMap.get(operandStack.pop()));
+                            }
+                            NHirPhiFunction phi = new NHirPhiFunction(block, hirId++, phiArgs, -1);
+                            block.cfg.hirMap.put(phi.id, phi);
+                            block.hir.add(phi);
+                            instruction = new NHirReturn(block, hirId++, phi.id);
+                        } else {
+                            instruction = new NHirReturn(block, hirId++, operandStack.pop());
+                        }
                         block.cfg.hirMap.put(instruction.id, instruction);
                         block.hir.add(instruction);
                         break;
@@ -638,6 +651,11 @@ class NControlFlowGraph {
             if (hir instanceof NHirPhiFunction) {
                 NHirPhiFunction phi = (NHirPhiFunction) hir;
                 int index = phi.index;
+
+                // If there is no variable bound to the phi function, there's no cleanup needed.
+                if (index == -1) {
+                    continue;
+                }
 
                 // Resolve any "?" in phi.args.
                 for (int i = 0; i < phi.args.size(); i++) {
