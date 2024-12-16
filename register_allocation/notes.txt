@@ -1,0 +1,33 @@
+1. For each problem, provide in no more than 100 words, a short, high-level description of the problem;
+your approach to solve it; and any issues you encountered and if/how you managed to solve them.
+
+Problem 1 (Register Allocation): This problem required me to implement a register allocation algorithm based 
+on graph coloring. To achieve this I made use of liveness intervals to construct an interference graph,
+afterwards I had to determine whether the graph was r-colorable. Using the given approach "degree < r" heuristic
+where r is the number of physical registers available we could determine if the graph was r-colorable and if so
+allocate physical registers to the virtual registers but if it wasn't r-colorable the requirement was to allocate
+physical registers to virtual registers, spilling as needed. I achieved this goal by implementing several helper functions
+to assist in building the interference graph, determining which nodes would be best for spilling if needed,
+and allocating colors as needed for graph coloring. The ending result being a register allocation algorithm meeting 
+the specified requirements.
+
+2. Did you receive help from anyone? List their names, status (classmate, course staff, other), and
+the nature of help received.
+
+Name                   Status           Help Received
+----                   ------           -------------
+
+Jongsoo Ha             classmate      I asked him to better explain the concept of graph coloring in person and he was able to do so on a whiteboard.
+
+3. List any other comments here. Feel free to provide any feedback on how much you learned from
+doing the assignment, and whether you enjoyed doing it.
+
+While working on this assignment I ran into many issues. My first issue was attempting to implement the algorithm
+without full understanding what the assignment asked of me which led to wasted time and effort and having to restart 
+the entire assignment. After spending countless hours researching and asking classmates to better explain the topic at hand 
+I was finally able to gain a better grasp of what the assignment has asked me to do. As such I was able to implement
+a better version of my project and through numerous interations finally arrive at the version I'm at now. The concept 
+of register allocation wasn't foreign but it's always been spoken about in a theoretical sense so having to implement
+proved challenging and enabled me to learn more about the way allocation takes place even if in a more basic sense of understanding.
+There's a lot more I would love to research now as a result of this assignment like for example despite this being an NP complete program
+what other solutions exist out there for solving this problem and how much more efficient could we theoretically become.
